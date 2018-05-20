@@ -1,0 +1,37 @@
+[package]
+name = "mortal"
+version = "0.1.0"
+authors = ["Murarth <murarth@gmail.com>"]
+
+description = "Cross-platform terminal interface"
+
+documentation = "https://docs.rs/mortal/"
+homepage = "https://github.com/murarth/mortal"
+repository = "https://github.com/murarth/mortal"
+
+categories = ["command-line-interface"]
+keywords = ["cli", "console", "screen", "term", "terminal"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+
+[badges]
+travis-ci = { repository = "murarth/mortal" }
+
+[dependencies]
+bitflags = "1.0"
+libc = "0.2"
+smallstr = "0.1"
+unicode-normalization = "0.1"
+unicode-width = "0.1"
+
+[target.'cfg(unix)'.dependencies]
+nix = "0.7"
+terminfo = "0.5"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = [
+    "consoleapi", "handleapi", "minwindef", "ntdef", "processenv", "synchapi",
+    "winbase", "wincon", "winerror", "winnt", "winuser" ] }
+
+[dev-dependencies]
+rand = "0.4"
