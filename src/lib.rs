@@ -19,9 +19,9 @@
 //!
 //! See the documentation for [`Terminal`] and [`Screen`] for further details.
 //!
-//! [`Screen`]: struct.Screen.html
-//! [`Terminal`]: struct.Terminal.html
-//! [`refresh`]: struct.Screen.html#method.refresh
+//! [`Screen`]: screen/struct.Screen.html
+//! [`Terminal`]: terminal/struct.Terminal.html
+//! [`refresh`]: screen/struct.Screen.html#method.refresh
 
 #![deny(missing_docs)]
 
