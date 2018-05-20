@@ -19,12 +19,12 @@ travis-ci = { repository = "murarth/mortal" }
 
 [dependencies]
 bitflags = "1.0"
-libc = "0.2"
 smallstr = "0.1"
 unicode-normalization = "0.1"
 unicode-width = "0.1"
 
 [target.'cfg(unix)'.dependencies]
+libc = "0.2"
 nix = "0.7"
 terminfo = "0.5"
 

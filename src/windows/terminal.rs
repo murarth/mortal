@@ -8,8 +8,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{LockResult, Mutex, MutexGuard, TryLockResult};
 use std::time::Duration;
 
-use libc::c_int;
-
+use winapi::ctypes::c_int;
 use winapi::shared::winerror::{
     WAIT_TIMEOUT,
 };

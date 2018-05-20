@@ -26,11 +26,11 @@
 #![deny(missing_docs)]
 
 #[macro_use] extern crate bitflags;
-extern crate libc;
 extern crate smallstr;
 extern crate unicode_normalization;
 extern crate unicode_width;
 
+#[cfg(unix)] extern crate libc;
 #[cfg(unix)] extern crate nix;
 #[cfg(unix)] extern crate terminfo;
 
