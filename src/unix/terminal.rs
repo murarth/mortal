@@ -33,7 +33,7 @@ use terminfo::{self, capability as cap, Database};
 use terminfo::capability::Expansion;
 use terminfo::expand::Context;
 
-use priv_util::{filter_visible, is_visible, map_lock_result, map_try_lock_result};
+use priv_util::{map_lock_result, map_try_lock_result};
 use sequence::{FindResult, SequenceMap};
 use signal::{Signal, SignalSet};
 use terminal::{
@@ -210,11 +210,7 @@ impl Terminal {
     }
 
     pub fn write_char(&self, ch: char) -> io::Result<()> {
-        if is_visible(ch) {
-            let mut buf = [0; 4];
-            self.write_str(ch.encode_utf8(&mut buf))?;
-        }
-        Ok(())
+        self.write_str(ch.encode_utf8(&mut [0; 4]))
     }
 
     pub fn write_str(&self, s: &str) -> io::Result<()> {
@@ -947,15 +943,10 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     pub fn write_char(&mut self, ch: char) -> io::Result<()> {
-        if is_visible(ch) {
-            let mut buf = [0; 4];
-            self.write_str(ch.encode_utf8(&mut buf))?;
-        }
-        Ok(())
+        self.write_str(ch.encode_utf8(&mut [0; 4]))
     }
 
     pub fn write_str(&mut self, s: &str) -> io::Result<()> {
-        let s = filter_visible(s);
         self.write_bytes(s.as_bytes())
     }
 

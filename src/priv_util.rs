@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::sync::{LockResult, PoisonError, TryLockError, TryLockResult};
 
 use screen::{Screen, ScreenReadGuard};
@@ -12,14 +11,6 @@ impl Private for Screen {}
 impl<'a> Private for ScreenReadGuard<'a> {}
 impl Private for Terminal {}
 impl<'a> Private for TerminalReadGuard<'a> {}
-
-pub fn filter_visible(s: &str) -> Cow<str> {
-    if s.chars().all(is_visible) {
-        Cow::Borrowed(s)
-    } else {
-        Cow::Owned(s.chars().filter(|&ch| is_visible(ch)).collect())
-    }
-}
 
 pub fn is_visible(ch: char) -> bool {
     match ch {

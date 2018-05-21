@@ -73,7 +73,7 @@ use winapi::um::winnt::{
     GENERIC_READ, GENERIC_WRITE,
 };
 
-use priv_util::{filter_visible, is_visible, map_lock_result, map_try_lock_result};
+use priv_util::{map_lock_result, map_try_lock_result};
 use signal::{Signal, SignalSet};
 use terminal::{
     Color, Cursor, CursorMode, Event, Key, PrepareConfig, Size, Style,
@@ -267,12 +267,7 @@ impl Terminal {
     }
 
     pub fn write_char(&self, ch: char) -> io::Result<()> {
-        if is_visible(ch) {
-            let mut buf = [0; 4];
-            self.lock_writer().write_str(ch.encode_utf8(&mut buf))?;
-        }
-
-        Ok(())
+        self.lock_writer().write_str(ch.encode_utf8(&mut [0; 4]))
     }
 
     pub fn write_str(&self, s: &str) -> io::Result<()> {
@@ -810,16 +805,12 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     pub fn write_char(&mut self, ch: char) -> io::Result<()> {
-        if is_visible(ch) {
-            let mut buf = [0; 4];
-            self.write_str(ch.encode_utf8(&mut buf))?;
-        }
-        Ok(())
+        let mut buf = [0; 4];
+        self.write_str(ch.encode_utf8(&mut buf))
     }
 
     pub fn write_str(&mut self, s: &str) -> io::Result<()> {
-        let s = filter_visible(s);
-        let buf = OsStr::new(&s[..]).encode_wide().collect::<Vec<_>>();
+        let buf = OsStr::new(s).encode_wide().collect::<Vec<_>>();
         let mut n = 0;
 
         while buf.len() > n {

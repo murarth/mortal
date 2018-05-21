@@ -244,12 +244,16 @@ impl Screen {
     }
 
     /// Writes text at the given position within the screen buffer.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     pub fn write_at<C>(&self, position: C, text: &str)
             where C: Into<Cursor> {
         self.0.write_at(position.into(), text);
     }
 
     /// Writes text with the given attributes at the current cursor position.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     pub fn write_styled<F, B, S>(&self, fg: F, bg: B, style: S, text: &str) where
             F: Into<Option<Color>>,
             B: Into<Option<Color>>,
@@ -260,6 +264,8 @@ impl Screen {
 
     /// Writes text with the given attributes at the given position within
     /// the screen buffer.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     pub fn write_styled_at<C, F, B, S>(&self, position: C,
             fg: F, bg: B, style: S, text: &str) where
             C: Into<Cursor>,
@@ -273,12 +279,16 @@ impl Screen {
 
     /// Writes a single character at the cursor position
     /// using the current style and color settings.
+    ///
+    /// If the character is a non-printable character, it will be ignored.
     pub fn write_char(&self, ch: char) {
         self.0.write_char(ch);
     }
 
     /// Writes a string at the cursor position
     /// using the current style and color settings.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     pub fn write_str(&self, s: &str) {
         self.0.write_str(s);
     }
@@ -288,6 +298,8 @@ impl Screen {
     ///
     /// This method enables `Screen` to be used as the receiver to
     /// the [`write!`] and [`writeln!`] macros.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     ///
     /// # Examples
     ///
@@ -362,6 +374,10 @@ impl<'a> ScreenWriteGuard<'a> {
     ///
     /// This setting is a visible hint to the user.
     /// It produces no change in behavior.
+    ///
+    /// # Notes
+    ///
+    /// On Unix systems, this setting may have no effect.
     pub fn set_cursor_mode(&mut self, mode: CursorMode) -> io::Result<()> {
         self.0.set_cursor_mode(mode)
     }
@@ -438,12 +454,16 @@ impl<'a> ScreenWriteGuard<'a> {
     }
 
     /// Writes text at the given position within the screen buffer.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     pub fn write_at<C>(&mut self, position: C, text: &str)
             where C: Into<Cursor> {
         self.0.write_at(position.into(), text)
     }
 
     /// Writes text with the given attributes at the current cursor position.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     pub fn write_styled<F, B, S>(&mut self, fg: F, bg: B, style: S, text: &str) where
             F: Into<Option<Color>>,
             B: Into<Option<Color>>,
@@ -454,6 +474,8 @@ impl<'a> ScreenWriteGuard<'a> {
 
     /// Writes text with the given attributes at the given position within
     /// the screen buffer.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     pub fn write_styled_at<C, F, B, S>(&mut self, position: C,
             fg: F, bg: B, style: S, text: &str) where
             C: Into<Cursor>,
@@ -467,12 +489,16 @@ impl<'a> ScreenWriteGuard<'a> {
 
     /// Writes a single character at the cursor position
     /// using the current style and color settings.
+    ///
+    /// If the character is a non-printable character, it will be ignored.
     pub fn write_char(&mut self, ch: char) {
         self.0.write_char(ch)
     }
 
     /// Writes a string at the cursor position
     /// using the current style and color settings.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     pub fn write_str(&mut self, s: &str) {
         self.0.write_str(s)
     }
@@ -482,6 +508,8 @@ impl<'a> ScreenWriteGuard<'a> {
     ///
     /// This method enables `ScreenWriteGuard` to be used as the receiver to
     /// the [`write!`] and [`writeln!`] macros.
+    ///
+    /// Any non-printable characters, such as escape sequences, will be ignored.
     ///
     /// [`write!`]: https://doc.rust-lang.org/std/macro.write.html
     /// [`writeln!`]: https://doc.rust-lang.org/std/macro.writeln.html
