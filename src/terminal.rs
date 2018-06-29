@@ -66,6 +66,7 @@ impl Cursor {
     /// Returns the position of the next cell within a terminal of the given size.
     ///
     /// Returns `None` if this cursor position represents the last cell.
+    #[inline]
     pub fn next(&self, size: Size) -> Option<Cursor> {
         let mut line = self.line;
         let mut column = self.column + 1;
@@ -85,6 +86,7 @@ impl Cursor {
     /// Returns the position of the previous cell within a terminal of the given size.
     ///
     /// Returns `None` if this cursor position represents the first cell.
+    #[inline]
     pub fn previous(&self, size: Size) -> Option<Cursor> {
         if self.column == 0 {
             if self.line == 0 {
@@ -98,6 +100,7 @@ impl Cursor {
     }
 
     /// Returns a `Cursor` pointing to the first cell, i.e. `(0, 0)`.
+    #[inline]
     pub fn first() -> Cursor {
         Cursor{
             line: 0,
@@ -106,6 +109,7 @@ impl Cursor {
     }
 
     /// Returns a `Cursor` pointing to the last cell of a screen of the given size.
+    #[inline]
     pub fn last(size: Size) -> Cursor {
         Cursor{
             line: size.lines - 1,
@@ -114,6 +118,7 @@ impl Cursor {
     }
 
     /// Returns whether the cursor is out of bounds of the given size.
+    #[inline]
     pub fn is_out_of_bounds(&self, size: Size) -> bool {
         self.line >= size.lines || self.column >= size.columns
     }
@@ -428,6 +433,7 @@ impl Size {
     /// # Panics
     ///
     /// If `lines * columns` would overflow.
+    #[inline]
     pub fn area(&self) -> usize {
         self.checked_area().unwrap_or_else(
             || panic!("overflow in Size::area {:?}", self))
@@ -436,6 +442,7 @@ impl Size {
     /// Returns the total number of cells in a terminal of the given size.
     ///
     /// Returns `None` in case of overflow.
+    #[inline]
     pub fn checked_area(&self) -> Option<usize> {
         self.lines.checked_mul(self.columns)
     }
@@ -488,6 +495,7 @@ impl Terminal {
     /// On Unix, this method returns the contents of the `TERM` environment variable.
     ///
     /// On Windows, this method always returns the string `"windows-console"`.
+    #[inline]
     pub fn name(&self) -> &str {
         self.0.name()
     }
@@ -495,6 +503,7 @@ impl Terminal {
     /// Attempts to acquire an exclusive lock on terminal read operations.
     ///
     /// The current thread will block until the lock can be acquired.
+    #[inline]
     pub fn lock_read(&self) -> LockResult<TerminalReadGuard> {
         map_lock_result(self.0.lock_read(), TerminalReadGuard)
     }
@@ -502,6 +511,7 @@ impl Terminal {
     /// Attempts to acquire an exclusive lock on terminal write operations.
     ///
     /// The current thread will block until the lock can be acquired.
+    #[inline]
     pub fn lock_write(&self) -> LockResult<TerminalWriteGuard> {
         map_lock_result(self.0.lock_write(), TerminalWriteGuard)
     }
@@ -509,6 +519,7 @@ impl Terminal {
     /// Attempts to acquire an exclusive lock on terminal read operations.
     ///
     /// If the lock cannot be acquired immediately, `Err(_)` is returned.
+    #[inline]
     pub fn try_lock_read(&self) -> TryLockResult<TerminalReadGuard> {
         map_try_lock_result(self.0.try_lock_read(), TerminalReadGuard)
     }
@@ -516,6 +527,7 @@ impl Terminal {
     /// Attempts to acquire an exclusive lock on terminal write operations.
     ///
     /// If the lock cannot be acquired immediately, `Err(_)` is returned.
+    #[inline]
     pub fn try_lock_write(&self) -> TryLockResult<TerminalWriteGuard> {
         map_try_lock_result(self.0.try_lock_write(), TerminalWriteGuard)
     }
@@ -598,6 +610,7 @@ impl Terminal {
 /// [`TerminalWriteGuard`]: struct.TerminalWriteGuard.html
 impl Terminal {
     /// Returns the size of the terminal.
+    #[inline]
     pub fn size(&self) -> io::Result<Size> {
         self.0.size()
     }
@@ -855,6 +868,7 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     /// Returns the size of the terminal.
+    #[inline]
     pub fn size(&self) -> io::Result<Size> {
         self.0.size()
     }

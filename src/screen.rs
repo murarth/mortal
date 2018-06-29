@@ -62,6 +62,7 @@ impl Screen {
     /// On Unix, this method returns the contents of the `TERM` environment variable.
     ///
     /// On Windows, this method always returns the string `"windows-console"`.
+    #[inline]
     pub fn name(&self) -> &str {
         self.0.name()
     }
@@ -69,6 +70,7 @@ impl Screen {
     /// Attempts to acquire an exclusive lock on terminal read operations.
     ///
     /// The current thread will block until the lock can be acquired.
+    #[inline]
     pub fn lock_read(&self) -> LockResult<ScreenReadGuard> {
         map_lock_result(self.0.lock_read(), ScreenReadGuard)
     }
@@ -76,6 +78,7 @@ impl Screen {
     /// Attempts to acquire an exclusive lock on terminal write operations.
     ///
     /// The current thread will block until the lock can be acquired.
+    #[inline]
     pub fn lock_write(&self) -> LockResult<ScreenWriteGuard> {
         map_lock_result(self.0.lock_write(), ScreenWriteGuard)
     }
@@ -83,6 +86,7 @@ impl Screen {
     /// Attempts to acquire an exclusive lock on terminal read operations.
     ///
     /// If the lock cannot be acquired immediately, `Err(_)` is returned.
+    #[inline]
     pub fn try_lock_read(&self) -> TryLockResult<ScreenReadGuard> {
         map_try_lock_result(self.0.try_lock_read(), ScreenReadGuard)
     }
@@ -90,6 +94,7 @@ impl Screen {
     /// Attempts to acquire an exclusive lock on terminal write operations.
     ///
     /// If the lock cannot be acquired immediately, `Err(_)` is returned.
+    #[inline]
     pub fn try_lock_write(&self) -> TryLockResult<ScreenWriteGuard> {
         map_try_lock_result(self.0.try_lock_write(), ScreenWriteGuard)
     }
@@ -144,21 +149,25 @@ impl Screen {
 /// [`ScreenWriteGuard`]: struct.ScreenWriteGuard.html
 impl Screen {
     /// Returns the current size of the terminal screen.
+    #[inline]
     pub fn size(&self) -> Size {
         self.0.size()
     }
 
     /// Returns the current cursor position.
+    #[inline]
     pub fn cursor(&self) -> Cursor {
         self.0.cursor()
     }
 
     /// Sets the cursor position.
+    #[inline]
     pub fn set_cursor<C: Into<Cursor>>(&self, pos: C) {
         self.0.set_cursor(pos.into());
     }
 
     /// Moves the cursor to the given column on the next line.
+    #[inline]
     pub fn next_line(&self, column: usize) {
         self.0.next_line(column);
     }
@@ -181,31 +190,37 @@ impl Screen {
     }
 
     /// Adds a set of `Style` flags to the current style setting.
+    #[inline]
     pub fn add_style(&self, style: Style) {
         self.0.add_style(style);
     }
 
     /// Removes a set of `Style` flags to the current style setting.
+    #[inline]
     pub fn remove_style(&self, style: Style) {
         self.0.remove_style(style);
     }
 
     /// Sets the current style setting to the given set of flags.
+    #[inline]
     pub fn set_style<S: Into<Option<Style>>>(&self, style: S) {
         self.0.set_style(style.into().unwrap_or_default());
     }
 
     /// Sets or removes foreground text color.
+    #[inline]
     pub fn set_fg<C: Into<Option<Color>>>(&self, fg: C) {
         self.0.set_fg(fg.into());
     }
 
     /// Sets or removes background text color.
+    #[inline]
     pub fn set_bg<C: Into<Option<Color>>>(&self, bg: C) {
         self.0.set_bg(bg.into());
     }
 
     /// Removes color and style attributes.
+    #[inline]
     pub fn clear_attributes(&self) {
         self.0.clear_attributes();
     }
@@ -213,6 +228,7 @@ impl Screen {
     /// Adds bold to the current style setting.
     ///
     /// This is equivalent to `self.add_style(Style::BOLD)`.
+    #[inline]
     pub fn bold(&self) {
         self.add_style(Style::BOLD);
     }
@@ -220,6 +236,7 @@ impl Screen {
     /// Adds italic to the current style setting.
     ///
     /// This is equivalent to `self.add_style(Style::ITALIC)`.
+    #[inline]
     pub fn italic(&self) {
         self.add_style(Style::ITALIC);
     }
@@ -227,6 +244,7 @@ impl Screen {
     /// Adds underline to the current style setting.
     ///
     /// This is equivalent to `self.add_style(Style::UNDERLINE)`.
+    #[inline]
     pub fn underline(&self) {
         self.add_style(Style::UNDERLINE);
     }
@@ -234,6 +252,7 @@ impl Screen {
     /// Adds reverse to the current style setting.
     ///
     /// This is equivalent to `self.add_style(Style::REVERSE)`.
+    #[inline]
     pub fn reverse(&self) {
         self.add_style(Style::REVERSE);
     }
@@ -351,21 +370,25 @@ impl<'a> ScreenReadGuard<'a> {
 
 impl<'a> ScreenWriteGuard<'a> {
     /// Returns the current size of the terminal screen.
+    #[inline]
     pub fn size(&self) -> Size {
         self.0.size()
     }
 
     /// Sets the cursor position.
+    #[inline]
     pub fn cursor(&self) -> Cursor {
         self.0.cursor()
     }
 
     /// Moves the cursor to the given column on the next line.
+    #[inline]
     pub fn set_cursor<C: Into<Cursor>>(&mut self, pos: C) {
         self.0.set_cursor(pos.into());
     }
 
     /// Set the current cursor mode.
+    #[inline]
     pub fn next_line(&mut self, column: usize) {
         self.0.next_line(column);
     }
@@ -389,31 +412,37 @@ impl<'a> ScreenWriteGuard<'a> {
 
     /// Removes a set of `Style` flags to the current style setting.
     /// Adds a set of `Style` flags to the current style setting.
+    #[inline]
     pub fn add_style(&mut self, style: Style) {
         self.0.add_style(style)
     }
 
     /// Sets the current style setting to the given set of flags.
+    #[inline]
     pub fn remove_style(&mut self, style: Style) {
         self.0.remove_style(style)
     }
 
     /// Sets or removes foreground text color.
+    #[inline]
     pub fn set_style<S: Into<Option<Style>>>(&mut self, style: S) {
         self.0.set_style(style.into().unwrap_or_default())
     }
 
     /// Sets or removes background text color.
+    #[inline]
     pub fn set_fg<C: Into<Option<Color>>>(&mut self, fg: C) {
         self.0.set_fg(fg.into())
     }
 
     /// Removes color and style attributes.
+    #[inline]
     pub fn set_bg<C: Into<Option<Color>>>(&mut self, bg: C) {
         self.0.set_bg(bg.into())
     }
 
     /// Adds bold to the current style setting.
+    #[inline]
     pub fn clear_attributes(&mut self) {
         self.0.clear_attributes()
     }
@@ -421,6 +450,7 @@ impl<'a> ScreenWriteGuard<'a> {
     /// Adds bold to the current style setting.
     ///
     /// This is equivalent to `self.add_style(Style::BOLD)`.
+    #[inline]
     pub fn bold(&mut self) {
         self.add_style(Style::BOLD)
     }
@@ -428,6 +458,7 @@ impl<'a> ScreenWriteGuard<'a> {
     /// Adds italic to the current style setting.
     ///
     /// This is equivalent to `self.add_style(Style::ITALIC)`.
+    #[inline]
     pub fn italic(&mut self) {
         self.add_style(Style::ITALIC);
     }
@@ -435,6 +466,7 @@ impl<'a> ScreenWriteGuard<'a> {
     /// Adds underline to the current style setting.
     ///
     /// This is equivalent to `self.add_style(Style::UNDERLINE)`.
+    #[inline]
     pub fn underline(&mut self) {
         self.add_style(Style::UNDERLINE)
     }
@@ -442,6 +474,7 @@ impl<'a> ScreenWriteGuard<'a> {
     /// Adds reverse to the current style setting.
     ///
     /// This is equivalent to `self.add_style(Style::REVERSE)`.
+    #[inline]
     pub fn reverse(&mut self) {
         self.add_style(Style::REVERSE)
     }

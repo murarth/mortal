@@ -5,6 +5,7 @@ use std::str::CharIndices;
 /// Returns the width of a character in the terminal.
 ///
 /// Returns `None` or `Some(0)` for control characters.
+#[inline]
 pub fn char_width(ch: char) -> Option<usize> {
     use unicode_width::UnicodeWidthChar;
 
@@ -12,6 +13,7 @@ pub fn char_width(ch: char) -> Option<usize> {
 }
 
 /// Returns whether the given character is a combining mark.
+#[inline]
 pub fn is_combining_mark(ch: char) -> bool {
     use unicode_normalization::char::is_combining_mark;
 
@@ -30,6 +32,7 @@ const UNCTRL_BIT: u8 = 0x40;
 /// // Ctrl-C
 /// assert_eq!(ctrl('c'), '\x03');
 /// ```
+#[inline]
 pub fn ctrl(ch: char) -> char {
     ((ch as u8) & CTRL_MASK) as char
 }
@@ -37,6 +40,7 @@ pub fn ctrl(ch: char) -> char {
 /// Returns whether the given character is a control character.
 ///
 /// Control characters are in the range `'\0'` ... `'\x1f'`, inclusive.
+#[inline]
 pub fn is_ctrl(ch: char) -> bool {
     let ch = ch as u32;
     ch & (CTRL_MASK as u32) == ch
@@ -53,6 +57,7 @@ pub fn is_ctrl(ch: char) -> bool {
 /// // Ctrl-C
 /// assert_eq!(unctrl_upper('\x03'), 'C');
 /// ```
+#[inline]
 pub fn unctrl_upper(ch: char) -> char {
     ((ch as u8) | UNCTRL_BIT) as char
 }
@@ -69,6 +74,7 @@ pub fn unctrl_upper(ch: char) -> char {
 /// // Ctrl-C
 /// assert_eq!(unctrl_lower('\x03'), 'c');
 /// ```
+#[inline]
 pub fn unctrl_lower(ch: char) -> char {
     unctrl_upper(ch).to_ascii_lowercase()
 }
@@ -99,6 +105,7 @@ pub struct Prefixes<'a> {
 /// assert_eq!(pfxs.next(), Some("foo"));
 /// assert_eq!(pfxs.next(), None);
 /// ```
+#[inline]
 pub fn prefixes(s: &str) -> Prefixes {
     Prefixes{
         s,
