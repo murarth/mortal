@@ -83,11 +83,11 @@ use util::unctrl_lower;
 
 macro_rules! result_bool {
     ( $e:expr ) => {
-        match $e {
+        match result_bool($e) {
             e => {
                 eprintln!("result_bool: {:?} at {}:{}",
                     e, file!(), line!());
-                result_bool(e)
+                e
             }
         }
     }
@@ -95,11 +95,11 @@ macro_rules! result_bool {
 
 macro_rules! result_handle {
     ( $e:expr ) => {
-        match $e {
+        match result_handle($e) {
             e => {
                 eprintln!("result_handle: {:?} at {}:{}",
                     e, file!(), line!());
-                result_handle(e)
+                e
             }
         }
     }
