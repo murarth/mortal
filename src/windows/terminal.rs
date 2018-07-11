@@ -149,6 +149,8 @@ impl Terminal {
 
         let default_attrs = unsafe { console_info(out_handle)?.wAttributes };
 
+        unsafe { test_console_modes(out_handle)?; }
+
         let old_out_mode = unsafe { prepare_output(out_handle)? };
 
         Ok(Terminal{
@@ -1023,6 +1025,24 @@ unsafe fn set_console_mode(handle: HANDLE, mode: DWORD) -> io::Result<()> {
 unsafe fn setup_screen(handle: HANDLE, size: Size) -> io::Result<()> {
     result_bool!(SetConsoleScreenBufferSize(handle, size_to_coord(size)))?;
     result_bool!(SetConsoleActiveScreenBuffer(handle))
+}
+
+unsafe fn test_console_modes(handle: HANDLE) -> io::Result<()> {
+    let out_mode = console_mode(handle)?;
+
+    let r = set_console_mode(handle, out_mode | ENABLE_PROCESSED_OUTPUT);
+    eprintln!("test result {:?} at {}", r, line!());
+
+    let r = set_console_mode(handle, out_mode | ENABLE_WRAP_AT_EOL_OUTPUT);
+    eprintln!("test result {:?} at {}", r, line!());
+
+    let r = set_console_mode(handle, out_mode | ENABLE_LVB_GRID_WORLDWIDE);
+    eprintln!("test result {:?} at {}", r, line!());
+
+    let r = set_console_mode(handle, out_mode);
+    eprintln!("test result {:?} at {}", r, line!());
+
+    Ok(())
 }
 
 unsafe fn prepare_output(handle: HANDLE) -> io::Result<DWORD> {
