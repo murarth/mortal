@@ -62,8 +62,8 @@ use winapi::um::wincon::{
     CTRL_BREAK_EVENT, CTRL_C_EVENT,
     ENABLE_ECHO_INPUT, ENABLE_LINE_INPUT, ENABLE_MOUSE_INPUT,
     ENABLE_EXTENDED_FLAGS, ENABLE_QUICK_EDIT_MODE, ENABLE_WINDOW_INPUT,
-    DISABLE_NEWLINE_AUTO_RETURN, ENABLE_LVB_GRID_WORLDWIDE,
-    ENABLE_VIRTUAL_TERMINAL_INPUT, ENABLE_VIRTUAL_TERMINAL_PROCESSING,
+    DISABLE_NEWLINE_AUTO_RETURN,
+    ENABLE_VIRTUAL_TERMINAL_INPUT,
     ENABLE_PROCESSED_INPUT,
     ENABLE_PROCESSED_OUTPUT, ENABLE_WRAP_AT_EOL_OUTPUT,
     KEY_EVENT, MOUSE_EVENT, WINDOW_BUFFER_SIZE_EVENT,
@@ -71,6 +71,7 @@ use winapi::um::wincon::{
 use winapi::um::winuser;
 use winapi::um::winnt::{
     GENERIC_READ, GENERIC_WRITE,
+    FILE_SHARE_READ, FILE_SHARE_WRITE,
 };
 
 use priv_util::{map_lock_result, map_try_lock_result};
@@ -401,11 +402,12 @@ impl<'a> TerminalReadGuard<'a> {
     pub fn restore_with_lock(&mut self, _writer: &mut TerminalWriteGuard,
             state: PrepareState) -> io::Result<()> {
         unsafe {
-            set_console_mode(self.term.in_handle, state.old_in_mode)?;
-
             if state.clear_handler {
                 result_bool(SetConsoleCtrlHandler(Some(ctrl_handler), FALSE))?;
             }
+
+            set_console_mode(self.term.in_handle,
+                state.old_in_mode | ENABLE_EXTENDED_FLAGS)?;
         }
 
         Ok(())
@@ -462,25 +464,15 @@ impl<'a> TerminalReadGuard<'a> {
         }
 
         unsafe {
-            let mode = console_mode(self.term.in_handle)?;
-
-            set_console_mode(self.term.in_handle,
-                mode | ENABLE_VIRTUAL_TERMINAL_INPUT)?;
-
             let len = to_dword(buf.len());
             let mut n_read = 0;
 
-            let r = result_bool(ReadConsoleW(
+            result_bool(ReadConsoleW(
                 self.term.in_handle,
                 buf.as_ptr() as *mut VOID,
                 len,
                 &mut n_read,
-                ptr::null_mut()));
-
-            let r2 = set_console_mode(self.term.in_handle, mode);
-
-            // Return if either call fails; use the first error returned.
-            r.or(r2)?;
+                ptr::null_mut()))?;
 
             if n_read == 0 {
                 Ok(None)
@@ -577,7 +569,7 @@ impl<'a> TerminalWriteGuard<'a> {
 
         let handle = result_handle(unsafe { CreateConsoleScreenBuffer(
             GENERIC_READ | GENERIC_WRITE,
-            0,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
             ptr::null(),
             CONSOLE_TEXTMODE_BUFFER,
             ptr::null_mut()) })?;
@@ -594,10 +586,7 @@ impl<'a> TerminalWriteGuard<'a> {
         let mut out_mode = unsafe { console_mode(handle)? };
 
         // Disable wrapping when cursor passes last column
-        out_mode &= !ENABLE_WRAP_AT_EOL_OUTPUT;
-
-        // Disable automatically moving to next line after passing last column
-        out_mode |= DISABLE_NEWLINE_AUTO_RETURN;
+        out_mode &= !(ENABLE_WRAP_AT_EOL_OUTPUT | DISABLE_NEWLINE_AUTO_RETURN);
 
         unsafe { set_console_mode(handle, out_mode)?; }
 
@@ -955,12 +944,6 @@ fn style_code(style: Style) -> WORD {
         // Closest available approximation for bold text
         code |= wincon::FOREGROUND_INTENSITY as WORD;
     }
-    if style.contains(Style::REVERSE) {
-        code |= wincon::COMMON_LVB_REVERSE_VIDEO as WORD;
-    }
-    if style.contains(Style::UNDERLINE) {
-        code |= wincon::COMMON_LVB_UNDERSCORE as WORD;
-    }
 
     code
 }
@@ -1008,13 +991,9 @@ unsafe fn prepare_output(handle: HANDLE) -> io::Result<DWORD> {
 
     // Enable interpreting escape sequences in output
     out_mode |= ENABLE_PROCESSED_OUTPUT;
-    out_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 
     // Enable wrapping when cursor passes last column
     out_mode |= ENABLE_WRAP_AT_EOL_OUTPUT;
-
-    // Enable color reverse attribute for every code page
-    out_mode |= ENABLE_LVB_GRID_WORLDWIDE;
 
     set_console_mode(handle, out_mode)?;
 
