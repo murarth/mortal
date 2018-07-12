@@ -62,7 +62,7 @@ use winapi::um::wincon::{
     CTRL_BREAK_EVENT, CTRL_C_EVENT,
     ENABLE_ECHO_INPUT, ENABLE_LINE_INPUT, ENABLE_MOUSE_INPUT,
     ENABLE_EXTENDED_FLAGS, ENABLE_QUICK_EDIT_MODE, ENABLE_WINDOW_INPUT,
-    DISABLE_NEWLINE_AUTO_RETURN, ENABLE_LVB_GRID_WORLDWIDE,
+    DISABLE_NEWLINE_AUTO_RETURN,
     ENABLE_VIRTUAL_TERMINAL_INPUT,
     ENABLE_PROCESSED_INPUT,
     ENABLE_PROCESSED_OUTPUT, ENABLE_WRAP_AT_EOL_OUTPUT,
@@ -80,30 +80,6 @@ use terminal::{
     MouseButton, MouseEvent, MouseInput, ModifierState,
 };
 use util::unctrl_lower;
-
-macro_rules! result_bool {
-    ( $e:expr ) => {
-        match result_bool($e) {
-            e => {
-                eprintln!("result_bool: {:?} at {}:{}",
-                    e, file!(), line!());
-                e
-            }
-        }
-    }
-}
-
-macro_rules! result_handle {
-    ( $e:expr ) => {
-        match result_handle($e) {
-            e => {
-                eprintln!("result_handle: {:?} at {}:{}",
-                    e, file!(), line!());
-                e
-            }
-        }
-    }
-}
 
 pub struct Terminal {
     in_handle: HANDLE,
@@ -142,14 +118,12 @@ pub struct PrepareState {
 
 impl Terminal {
     fn new(out: DWORD) -> io::Result<Terminal> {
-        let in_handle = result_handle!(
+        let in_handle = result_handle(
             unsafe { GetStdHandle(STD_INPUT_HANDLE) })?;
-        let out_handle = result_handle!(
+        let out_handle = result_handle(
             unsafe { GetStdHandle(out) })?;
 
         let default_attrs = unsafe { console_info(out_handle)?.wAttributes };
-
-        unsafe { test_console_modes(out_handle)?; }
 
         let old_out_mode = unsafe { prepare_output(out_handle)? };
 
@@ -411,7 +385,7 @@ impl<'a> TerminalReadGuard<'a> {
 
             if config.report_signals.intersects(Signal::Break | Signal::Interrupt) {
                 catch_signals(config.report_signals);
-                result_bool!(SetConsoleCtrlHandler(Some(ctrl_handler), TRUE))?;
+                result_bool(SetConsoleCtrlHandler(Some(ctrl_handler), TRUE))?;
                 state.clear_handler = true;
             }
         }
@@ -430,7 +404,7 @@ impl<'a> TerminalReadGuard<'a> {
             set_console_mode(self.term.in_handle, state.old_in_mode)?;
 
             if state.clear_handler {
-                result_bool!(SetConsoleCtrlHandler(Some(ctrl_handler), FALSE))?;
+                result_bool(SetConsoleCtrlHandler(Some(ctrl_handler), FALSE))?;
             }
         }
 
@@ -496,7 +470,7 @@ impl<'a> TerminalReadGuard<'a> {
             let len = to_dword(buf.len());
             let mut n_read = 0;
 
-            let r = result_bool!(ReadConsoleW(
+            let r = result_bool(ReadConsoleW(
                 self.term.in_handle,
                 buf.as_ptr() as *mut VOID,
                 len,
@@ -529,7 +503,7 @@ impl<'a> TerminalReadGuard<'a> {
         let len = to_dword(events.len());
         let mut n = 0;
 
-        result_bool!(unsafe { ReadConsoleInputW(
+        result_bool(unsafe { ReadConsoleInputW(
             self.term.in_handle,
             events.as_mut_ptr(),
             len,
@@ -601,7 +575,7 @@ impl<'a> TerminalWriteGuard<'a> {
     fn enter_screen(&mut self) -> io::Result<HANDLE> {
         let size = self.size()?;
 
-        let handle = result_handle!(unsafe { CreateConsoleScreenBuffer(
+        let handle = result_handle(unsafe { CreateConsoleScreenBuffer(
             GENERIC_READ | GENERIC_WRITE,
             0,
             ptr::null(),
@@ -631,7 +605,7 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     unsafe fn exit_screen(&mut self, old_handle: HANDLE) -> io::Result<()> {
-        result_bool!(SetConsoleActiveScreenBuffer(old_handle))?;
+        result_bool(SetConsoleActiveScreenBuffer(old_handle))?;
 
         let handle = self.swap_out_handle(old_handle);
 
@@ -669,7 +643,7 @@ impl<'a> TerminalWriteGuard<'a> {
                 info.srWindow.Top += down as SHORT;
                 info.srWindow.Bottom += down as SHORT;
 
-                result_bool!(unsafe { SetConsoleWindowInfo(
+                result_bool(unsafe { SetConsoleWindowInfo(
                     self.writer.out_handle,
                     TRUE,
                     &info.srWindow) })?;
@@ -698,7 +672,7 @@ impl<'a> TerminalWriteGuard<'a> {
                     Attributes: 0,
                 };
 
-                result_bool!(unsafe { ScrollConsoleScreenBufferW(
+                result_bool(unsafe { ScrollConsoleScreenBufferW(
                     self.writer.out_handle,
                     &src,
                     ptr::null(),
@@ -774,7 +748,7 @@ impl<'a> TerminalWriteGuard<'a> {
             bVisible: vis,
         };
 
-        result_bool!(unsafe { SetConsoleCursorInfo(self.writer.out_handle, &info) })
+        result_bool(unsafe { SetConsoleCursorInfo(self.writer.out_handle, &info) })
     }
 
     pub fn clear_attributes(&mut self) -> io::Result<()> {
@@ -843,7 +817,7 @@ impl<'a> TerminalWriteGuard<'a> {
             let mut n_dw = 0;
             let len = to_dword(buf.len() - n);
 
-            result_bool!(unsafe { WriteConsoleW(
+            result_bool(unsafe { WriteConsoleW(
                 self.writer.out_handle,
                 buf[n..].as_ptr() as *const VOID,
                 len,
@@ -867,14 +841,14 @@ impl<'a> TerminalWriteGuard<'a> {
     fn clear_area(&mut self, start: COORD, n: DWORD) -> io::Result<()> {
         let mut n_chars = 0;
 
-        result_bool!(unsafe { FillConsoleOutputAttribute(
+        result_bool(unsafe { FillConsoleOutputAttribute(
             self.writer.out_handle,
             0,
             n,
             start,
             &mut n_chars) })?;
 
-        result_bool!(unsafe { FillConsoleOutputCharacterA(
+        result_bool(unsafe { FillConsoleOutputCharacterA(
             self.writer.out_handle,
             b' ' as CHAR,
             n,
@@ -885,7 +859,7 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     fn move_abs(&mut self, pos: COORD) -> io::Result<()> {
-        result_bool!(unsafe { SetConsoleCursorPosition(
+        result_bool(unsafe { SetConsoleCursorPosition(
             self.writer.out_handle, pos) })
     }
 
@@ -913,7 +887,7 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     fn set_attrs(&mut self, attrs: WORD) -> io::Result<()> {
-        result_bool!(unsafe { SetConsoleTextAttribute(
+        result_bool(unsafe { SetConsoleTextAttribute(
             self.writer.out_handle, attrs) })
     }
 
@@ -981,24 +955,18 @@ fn style_code(style: Style) -> WORD {
         // Closest available approximation for bold text
         code |= wincon::FOREGROUND_INTENSITY as WORD;
     }
-    if style.contains(Style::REVERSE) {
-        code |= wincon::COMMON_LVB_REVERSE_VIDEO as WORD;
-    }
-    if style.contains(Style::UNDERLINE) {
-        code |= wincon::COMMON_LVB_UNDERSCORE as WORD;
-    }
 
     code
 }
 
 unsafe fn close_handle(handle: HANDLE) -> io::Result<()> {
-    result_bool!(CloseHandle(handle))
+    result_bool(CloseHandle(handle))
 }
 
 unsafe fn console_info(handle: HANDLE) -> io::Result<CONSOLE_SCREEN_BUFFER_INFO> {
     let mut info = zeroed();
 
-    result_bool!(GetConsoleScreenBufferInfo(handle, &mut info))?;
+    result_bool(GetConsoleScreenBufferInfo(handle, &mut info))?;
 
     Ok(info)
 }
@@ -1006,7 +974,7 @@ unsafe fn console_info(handle: HANDLE) -> io::Result<CONSOLE_SCREEN_BUFFER_INFO>
 unsafe fn console_mode(handle: HANDLE) -> io::Result<DWORD> {
     let mut mode = 0;
 
-    result_bool!(GetConsoleMode(handle, &mut mode))?;
+    result_bool(GetConsoleMode(handle, &mut mode))?;
 
     Ok(mode)
 }
@@ -1018,31 +986,13 @@ unsafe fn console_size(handle: HANDLE) -> io::Result<Size> {
 }
 
 unsafe fn set_console_mode(handle: HANDLE, mode: DWORD) -> io::Result<()> {
-    result_bool!(SetConsoleMode(handle, mode))
+    result_bool(SetConsoleMode(handle, mode))
 }
 
 // Perform remaining screen buffer setup
 unsafe fn setup_screen(handle: HANDLE, size: Size) -> io::Result<()> {
-    result_bool!(SetConsoleScreenBufferSize(handle, size_to_coord(size)))?;
-    result_bool!(SetConsoleActiveScreenBuffer(handle))
-}
-
-unsafe fn test_console_modes(handle: HANDLE) -> io::Result<()> {
-    let out_mode = console_mode(handle)?;
-
-    let r = set_console_mode(handle, out_mode | ENABLE_PROCESSED_OUTPUT);
-    eprintln!("test result {:?} at {}", r, line!());
-
-    let r = set_console_mode(handle, out_mode | ENABLE_WRAP_AT_EOL_OUTPUT);
-    eprintln!("test result {:?} at {}", r, line!());
-
-    let r = set_console_mode(handle, out_mode | ENABLE_LVB_GRID_WORLDWIDE);
-    eprintln!("test result {:?} at {}", r, line!());
-
-    let r = set_console_mode(handle, out_mode);
-    eprintln!("test result {:?} at {}", r, line!());
-
-    Ok(())
+    result_bool(SetConsoleScreenBufferSize(handle, size_to_coord(size)))?;
+    result_bool(SetConsoleActiveScreenBuffer(handle))
 }
 
 unsafe fn prepare_output(handle: HANDLE) -> io::Result<DWORD> {
@@ -1055,9 +1005,6 @@ unsafe fn prepare_output(handle: HANDLE) -> io::Result<DWORD> {
 
     // Enable wrapping when cursor passes last column
     out_mode |= ENABLE_WRAP_AT_EOL_OUTPUT;
-
-    // Enable color reverse attribute for every code page
-    out_mode |= ENABLE_LVB_GRID_WORLDWIDE;
 
     set_console_mode(handle, out_mode)?;
 
@@ -1310,7 +1257,7 @@ unsafe extern "system" fn ctrl_handler(ctrl_type: DWORD) -> BOOL {
 
             LAST_SIGNAL.store(ctrl_type as usize, Ordering::Relaxed);
 
-            if let Ok(handle) = result_handle!(
+            if let Ok(handle) = result_handle(
                     GetStdHandle(STD_INPUT_HANDLE)) {
                 // Wake up the `WaitForSingleObject` call by
                 // generating a key up event, which will be ignored.
