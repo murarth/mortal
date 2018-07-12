@@ -486,25 +486,15 @@ impl<'a> TerminalReadGuard<'a> {
         }
 
         unsafe {
-            let mode = console_mode(self.term.in_handle)?;
-
-            set_console_mode(self.term.in_handle,
-                mode | ENABLE_VIRTUAL_TERMINAL_INPUT)?;
-
             let len = to_dword(buf.len());
             let mut n_read = 0;
 
-            let r = result_bool!(ReadConsoleW(
+            result_bool!(ReadConsoleW(
                 self.term.in_handle,
                 buf.as_ptr() as *mut VOID,
                 len,
                 &mut n_read,
-                ptr::null_mut()));
-
-            let r2 = set_console_mode(self.term.in_handle, mode);
-
-            // Return if either call fails; use the first error returned.
-            r.or(r2)?;
+                ptr::null_mut()))?;
 
             if n_read == 0 {
                 Ok(None)
