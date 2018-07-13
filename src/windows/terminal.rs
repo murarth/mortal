@@ -425,11 +425,12 @@ impl<'a> TerminalReadGuard<'a> {
     pub fn restore_with_lock(&mut self, _writer: &mut TerminalWriteGuard,
             state: PrepareState) -> io::Result<()> {
         unsafe {
-            set_console_mode(self.term.in_handle, state.old_in_mode)?;
-
             if state.clear_handler {
                 result_bool!(SetConsoleCtrlHandler(Some(ctrl_handler), FALSE))?;
             }
+
+            set_console_mode(self.term.in_handle,
+                state.old_in_mode | ENABLE_EXTENDED_FLAGS)?;
         }
 
         Ok(())
