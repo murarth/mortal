@@ -639,10 +639,7 @@ impl<'a> TerminalWriteGuard<'a> {
         let mut out_mode = unsafe { console_mode(handle)? };
 
         // Disable wrapping when cursor passes last column
-        out_mode &= !ENABLE_WRAP_AT_EOL_OUTPUT;
-
-        // Disable automatically moving to next line after passing last column
-        out_mode |= DISABLE_NEWLINE_AUTO_RETURN;
+        out_mode &= !(ENABLE_WRAP_AT_EOL_OUTPUT | DISABLE_NEWLINE_AUTO_RETURN);
 
         unsafe { set_console_mode(handle, out_mode)?; }
 
