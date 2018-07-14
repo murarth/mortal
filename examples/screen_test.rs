@@ -33,6 +33,9 @@ fn main() -> io::Result<()> {
     screen.set_cursor((9, 15));
     write!(screen, "xxxx");
 
+    screen.set_cursor((size.lines - 1, size.columns - 20));
+    write!(screen, "this text goes too far");
+
     screen.set_cursor((0, 0));
     screen.refresh()?;
 
