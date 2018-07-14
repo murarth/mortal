@@ -82,11 +82,40 @@ use terminal::{
 };
 use util::unctrl_lower;
 
+fn write_log(args: ::std::fmt::Arguments) {
+    use std::cell::RefCell;
+    use std::fs::File;
+    use std::io::Write;
+
+    thread_local!{
+        static FILE: RefCell<Option<File>> = RefCell::new(None);
+    }
+
+    FILE.with(|f| {
+        let mut f = f.borrow_mut();
+
+        if f.is_none() {
+            *f = Some(File::create("mortal.log")
+                .expect("failed to open log file"));
+        }
+
+        let f = f.as_mut().unwrap();
+
+        let _ = f.write_fmt(args);
+    });
+}
+
+macro_rules! log {
+    ( $fmt:expr , $($tt:tt)* ) => {
+        write_log(format_args!(concat!($fmt, "\n") , $($tt)*))
+    }
+}
+
 macro_rules! result_bool {
     ( $e:expr ) => {
         match result_bool($e) {
             e => {
-                eprintln!("result_bool: {:?} at {}:{}",
+                log!("result_bool: {:?} at {}:{}",
                     e, file!(), line!());
                 e
             }
@@ -98,7 +127,7 @@ macro_rules! result_handle {
     ( $e:expr ) => {
         match result_handle($e) {
             e => {
-                eprintln!("result_handle: {:?} at {}:{}",
+                log!("result_handle: {:?} at {}:{}",
                     e, file!(), line!());
                 e
             }
