@@ -71,6 +71,7 @@ use winapi::um::wincon::{
 use winapi::um::winuser;
 use winapi::um::winnt::{
     GENERIC_READ, GENERIC_WRITE,
+    FILE_SHARE_READ, FILE_SHARE_WRITE,
 };
 
 use priv_util::{map_lock_result, map_try_lock_result};
@@ -592,7 +593,7 @@ impl<'a> TerminalWriteGuard<'a> {
 
         let handle = result_handle!(unsafe { CreateConsoleScreenBuffer(
             GENERIC_READ | GENERIC_WRITE,
-            0,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
             ptr::null(),
             CONSOLE_TEXTMODE_BUFFER,
             ptr::null_mut()) })?;
