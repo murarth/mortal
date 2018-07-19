@@ -110,6 +110,9 @@ struct Reader {
 
 struct Writer {
     out_handle: HANDLE,
+    fg: Option<Color>,
+    bg: Option<Color>,
+    style: Style,
 }
 
 pub struct PrepareState {
@@ -138,6 +141,9 @@ impl Terminal {
             }),
             writer: Mutex::new(Writer{
                 out_handle,
+                fg: None,
+                bg: None,
+                style: Style::empty(),
             }),
         })
     }
@@ -741,54 +747,87 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     pub fn clear_attributes(&mut self) -> io::Result<()> {
-        let default_attrs = self.term.default_attrs;
-        self.set_attrs(default_attrs)
+        self.set_attributes(None, None, Style::empty())
     }
 
     pub fn add_style(&mut self, style: Style) -> io::Result<()> {
-        self.add_attrs(style_code(style), 0)
+        let add = style - self.writer.style;
+
+        if !add.is_empty() {
+            self.writer.style |= add;
+            self.update_attrs()?;
+        }
+
+        Ok(())
     }
 
     pub fn remove_style(&mut self, style: Style) -> io::Result<()> {
-        self.add_attrs(0, style_code(style))
+        let remove = style & self.writer.style;
+
+        if !remove.is_empty() {
+            self.writer.style -= remove;
+            self.update_attrs()?;
+        }
+
+        Ok(())
     }
 
     pub fn set_style(&mut self, style: Style) -> io::Result<()> {
-        self.add_attrs(style_code(style), style_code(Style::all()))
+        if self.writer.style != style {
+            self.writer.style = style;
+            self.update_attrs()?;
+        }
+        Ok(())
     }
 
     pub fn set_fg(&mut self, fg: Option<Color>) -> io::Result<()> {
-        if let Some(fg) = fg {
-            self.add_attrs(fg_code(fg), fg_code(Color::White))
-        } else {
-            self.reset_attrs_mask(fg_code(Color::White))
+        if self.writer.fg != fg {
+            self.writer.fg = fg;
+            self.update_attrs()?;
         }
+
+        Ok(())
     }
 
     pub fn set_bg(&mut self, bg: Option<Color>) -> io::Result<()> {
-        if let Some(bg) = bg {
-            self.add_attrs(bg_code(bg), bg_code(Color::White))
-        } else {
-            self.reset_attrs_mask(bg_code(Color::White))
+        if self.writer.bg != bg {
+            self.writer.bg = bg;
+            self.update_attrs()?;
         }
+        Ok(())
     }
 
     // Clears any previous attributes
     pub fn set_attributes(&mut self,
             fg: Option<Color>, bg: Option<Color>, style: Style) -> io::Result<()> {
+        if self.writer.fg != fg || self.writer.bg != bg || self.writer.style != style {
+            self.writer.fg = fg;
+            self.writer.bg = bg;
+            self.writer.style = style;
+            self.update_attrs()?;
+        }
+
+        Ok(())
+    }
+
+    fn update_attrs(&mut self) -> io::Result<()> {
         let mut attrs = self.term.default_attrs;
 
-        if let Some(fg) = fg {
+        if let Some(fg) = self.writer.fg {
             attrs &= !fg_code(Color::White);
             attrs |= fg_code(fg);
         }
 
-        if let Some(bg) = bg {
+        if let Some(bg) = self.writer.bg {
             attrs &= !bg_code(Color::White);
             attrs |= bg_code(bg);
         }
 
-        attrs |= style_code(style);
+        attrs |= style_code(self.writer.style);
+
+        if self.writer.style.contains(Style::REVERSE) {
+            attrs = swap_colors(attrs);
+        }
 
         self.set_attrs(attrs)
     }
@@ -866,25 +905,9 @@ impl<'a> TerminalWriteGuard<'a> {
         self.move_abs(dest)
     }
 
-    fn add_attrs(&mut self, attrs: WORD, mask: WORD) -> io::Result<()> {
-        if attrs != 0 {
-            let info = self.get_info()?;
-            self.set_attrs((info.wAttributes & !mask) | attrs)?;
-        }
-
-        Ok(())
-    }
-
     fn set_attrs(&mut self, attrs: WORD) -> io::Result<()> {
         result_bool(unsafe { SetConsoleTextAttribute(
             self.writer.out_handle, attrs) })
-    }
-
-    fn reset_attrs_mask(&mut self, mask: WORD) -> io::Result<()> {
-        let info = self.get_info()?;
-        let attrs = (info.wAttributes & !mask) | (self.term.default_attrs & mask);
-
-        self.set_attrs(attrs)
     }
 
     fn get_info(&self) -> io::Result<CONSOLE_SCREEN_BUFFER_INFO> {
@@ -946,6 +969,23 @@ fn style_code(style: Style) -> WORD {
     }
 
     code
+}
+
+fn swap_colors(code: WORD) -> WORD {
+    let fg_mask = fg_code(Color::White);
+    let bg_mask = bg_code(Color::White);
+
+    let fg_shift = fg_mask.trailing_zeros();
+    let bg_shift = bg_mask.trailing_zeros();
+    let shift = bg_shift - fg_shift;
+
+    let fg = code & fg_mask;
+    let bg = code & bg_mask;
+
+    let swapped_fg = fg << shift;
+    let swapped_bg = bg >> shift;
+
+    (code & !(fg_mask | bg_mask)) | swapped_fg | swapped_bg
 }
 
 unsafe fn close_handle(handle: HANDLE) -> io::Result<()> {
