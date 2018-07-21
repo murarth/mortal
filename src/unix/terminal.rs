@@ -205,6 +205,14 @@ impl Terminal {
         self.lock_writer().move_to_first_column()
     }
 
+    pub fn supports_true_color(&self) -> bool {
+        if let Some(cap::TrueColor(supports)) = self.info.get() {
+            supports
+        } else {
+            false
+        }
+    }
+
     pub fn set_cursor_mode(&self, mode: CursorMode) -> io::Result<()> {
         self.lock_writer().set_cursor_mode(mode)
     }
@@ -845,13 +853,23 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     fn set_fg_color(&mut self, fg: Color) -> io::Result<()> {
-        expand_opt!(self, cap::SetAForeground,
-            |ex| ex.parameters(color_code(fg)))
+        if let Color::TrueColor{r, g, b} = fg {
+            expand_opt!(self, cap::SetTrueColorForeground,
+                |ex| ex.parameters(r, g, b))
+        } else {
+            expand_opt!(self, cap::SetAForeground,
+                |ex| ex.parameters(color_code(fg)))
+        }
     }
 
     fn set_bg_color(&mut self, bg: Color) -> io::Result<()> {
-        expand_opt!(self, cap::SetABackground,
-            |ex| ex.parameters(color_code(bg)))
+        if let Color::TrueColor{r, g, b} = bg {
+            expand_opt!(self, cap::SetTrueColorBackground,
+                |ex| ex.parameters(r, g, b))
+        } else {
+            expand_opt!(self, cap::SetABackground,
+                |ex| ex.parameters(color_code(bg)))
+        }
     }
 
     pub fn clear_screen(&mut self) -> io::Result<()> {
@@ -1348,6 +1366,7 @@ fn color_code(color: Color) -> u8 {
         Color::Magenta =>   5,
         Color::Cyan =>      6,
         Color::White =>     7,
+        Color::TrueColor{..} => unreachable!()
     }
 }
 

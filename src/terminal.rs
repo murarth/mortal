@@ -34,6 +34,15 @@ pub enum Color {
     White,
     /// Yellow
     Yellow,
+    /// True color
+    TrueColor{
+        /// Red component
+        r: u8,
+        /// Green component
+        g: u8,
+        /// Blue component
+        b: u8,
+    },
 }
 
 bitflags!{
@@ -657,6 +666,11 @@ impl Terminal {
     /// Moves the cursor to the first column of the current line
     pub fn move_to_first_column(&self) -> io::Result<()> {
         self.0.move_to_first_column()
+    }
+
+    /// Returns whether the terminal device supports true color.
+    pub fn supports_true_color(&self) -> bool {
+        self.0.supports_true_color()
     }
 
     /// Set the current cursor mode.
