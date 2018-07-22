@@ -461,7 +461,7 @@ impl Size {
 ///
 /// [reading]: struct.TerminalReadGuard.html
 /// [writing]: struct.TerminalWriteGuard.html
-pub struct Terminal(sys::Terminal);
+pub struct Terminal(pub(crate) sys::Terminal);
 
 /// Holds an exclusive lock for read operations on a `Terminal`
 ///
@@ -1022,6 +1022,16 @@ impl<'a> TerminalWriteGuard<'a> {
     pub fn write_fmt(&mut self, args: fmt::Arguments) -> io::Result<()> {
         let s = args.to_string();
         self.write_str(&s)
+    }
+}
+
+#[cfg(unix)]
+use std::path::Path;
+
+#[cfg(unix)]
+impl ::unix::OpenTerminalExt for Terminal {
+    fn from_path<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        sys::Terminal::open(path).map(Terminal)
     }
 }
 

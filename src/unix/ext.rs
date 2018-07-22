@@ -1,12 +1,22 @@
 //! Unix extension trait
 
 use std::io;
+use std::path::Path;
 use std::time::Duration;
 
 use priv_util::Private;
 use terminal::Event;
 
-/// Implements extensions for `Terminal` and `Screen` on Unix systems.
+/// Implements Unix-only extensions for terminal interfaces.
+pub trait OpenTerminalExt: Sized + Private {
+    /// Opens a terminal interface on the device at the given path.
+    ///
+    /// If the path cannot be opened for read/write operations,
+    /// an error is returned.
+    fn from_path<P: AsRef<Path>>(path: P) -> io::Result<Self>;
+}
+
+/// Implements Unix-only extensions for terminal interfaces.
 pub trait TerminalExt: Private {
     /// Reads raw data from the terminal.
     ///

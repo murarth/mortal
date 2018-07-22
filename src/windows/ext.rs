@@ -7,7 +7,7 @@ use terminal::Event;
 use priv_util::Private;
 use winapi::um::wincon::INPUT_RECORD;
 
-/// Implements extensions for `Terminal` and `Screen` on Windows systems.
+/// Implements Windows-only extensions for terminal interfaces.
 pub trait TerminalExt: Private {
     /// Reads raw data from the console.
     ///

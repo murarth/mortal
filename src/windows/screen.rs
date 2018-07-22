@@ -41,7 +41,7 @@ struct Writer {
 }
 
 impl Screen {
-    fn new(term: Terminal, config: PrepareConfig) -> io::Result<Screen> {
+    pub fn new(term: Terminal, config: PrepareConfig) -> io::Result<Screen> {
         let size = term.size()?;
 
         let old_handle = term.enter_screen()?;

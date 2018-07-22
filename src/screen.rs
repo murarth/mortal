@@ -7,7 +7,10 @@ use std::time::Duration;
 
 use priv_util::{map_lock_result, map_try_lock_result};
 use sys;
-use terminal::{Color, Cursor, CursorMode, Event, PrepareConfig, Size, Style};
+use terminal::{
+    Color, Cursor, CursorMode, Event, PrepareConfig, Size, Style,
+    Terminal,
+};
 
 /// Provides operations on an underlying terminal device in screen mode.
 ///
@@ -53,6 +56,11 @@ impl Screen {
     /// Opens a new screen interface on `stderr`.
     pub fn stderr(config: PrepareConfig) -> io::Result<Screen> {
         sys::Screen::stderr(config).map(Screen)
+    }
+
+    /// Begins a new screen session using the given `Terminal` instance.
+    pub fn with_terminal(term: Terminal, config: PrepareConfig) -> io::Result<Screen> {
+        sys::Screen::new(term.0, config).map(Screen)
     }
 
     /// Returns the name of the terminal.

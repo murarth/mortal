@@ -1,6 +1,8 @@
+use std::fs::File;
 use std::io;
 use std::mem::{replace, zeroed};
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{FromRawFd, IntoRawFd, RawFd};
+use std::path::Path;
 use std::str::from_utf8;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{LockResult, Mutex, MutexGuard, TryLockResult};
@@ -65,7 +67,9 @@ enum SeqData {
 
 pub struct Terminal {
     info: Database,
-    fd: RawFd,
+    out_fd: RawFd,
+    in_fd: RawFd,
+    owned_fd: bool,
     sequences: SeqMap,
     reader: Mutex<Reader>,
     writer: Mutex<Writer>,
@@ -96,13 +100,15 @@ struct Writer {
 }
 
 impl Terminal {
-    fn new(fd: RawFd) -> io::Result<Terminal> {
+    fn new(in_fd: RawFd, out_fd: RawFd, owned_fd: bool) -> io::Result<Terminal> {
         let info = Database::from_env().map_err(to_io)?;
         let sequences = sequences(&info);
 
         Ok(Terminal{
             info,
-            fd,
+            in_fd,
+            out_fd,
+            owned_fd,
             sequences,
             reader: Mutex::new(Reader{
                 in_buffer: Vec::new(),
@@ -113,12 +119,24 @@ impl Terminal {
         })
     }
 
+    pub fn open<P: AsRef<Path>>(path: P) -> io::Result<Terminal> {
+        let fd = open_rw(path)?;
+
+        let r = Terminal::new(fd, fd, true);
+
+        if r.is_err() {
+            unsafe { close_fd(fd); }
+        }
+
+        r
+    }
+
     pub fn stdout() -> io::Result<Terminal> {
-        Terminal::new(STDOUT_FILENO)
+        Terminal::new(STDIN_FILENO, STDOUT_FILENO, false)
     }
 
     pub fn stderr() -> io::Result<Terminal> {
-        Terminal::new(STDERR_FILENO)
+        Terminal::new(STDIN_FILENO, STDERR_FILENO, false)
     }
 
     pub fn name(&self) -> &str {
@@ -281,6 +299,10 @@ impl Drop for Terminal {
         if let Err(e) = self.set_cursor_mode(CursorMode::Normal) {
             eprintln!("failed to restore terminal: {}", e);
         }
+
+        if self.owned_fd {
+            unsafe { close_fd(self.out_fd); }
+        }
     }
 }
 
@@ -296,7 +318,7 @@ impl<'a> TerminalReadGuard<'a> {
 
     pub fn prepare_with_lock(&mut self, writer: &mut TerminalWriteGuard,
             config: PrepareConfig) -> io::Result<PrepareState> {
-        let old_tio = tcgetattr(STDIN_FILENO)?;
+        let old_tio = tcgetattr(self.term.in_fd)?;
         let mut tio = old_tio;
 
         let mut state = PrepareState{
@@ -346,7 +368,7 @@ impl<'a> TerminalReadGuard<'a> {
         // Allow a read to return after 0 deciseconds
         tio.c_cc[VTIME] = 0;
 
-        tcsetattr(STDIN_FILENO, SetArg::TCSANOW, &tio)?;
+        tcsetattr(self.term.in_fd, SetArg::TCSANOW, &tio)?;
 
         if config.enable_mouse {
             if writer.enable_mouse(config.always_track_motion)? {
@@ -405,7 +427,7 @@ impl<'a> TerminalReadGuard<'a> {
 
         writer.flush()?;
 
-        tcsetattr(STDIN_FILENO, SetArg::TCSANOW, &state.old_tio)?;
+        tcsetattr(self.term.in_fd, SetArg::TCSANOW, &state.old_tio)?;
 
         unsafe {
             if let Some(ref old) = state.old_sigcont {
@@ -440,14 +462,16 @@ impl<'a> TerminalReadGuard<'a> {
         let mut timeout = timeout.map(to_timeval);
 
         let n = loop {
+            let in_fd = self.term.in_fd;
+
             let mut r_fds = FdSet::new();
-            r_fds.insert(STDIN_FILENO);
+            r_fds.insert(in_fd);
 
             // FIXME: FdSet does not implement Copy or Clone
             let mut e_fds = FdSet::new();
-            e_fds.insert(STDIN_FILENO);
+            e_fds.insert(in_fd);
 
-            match select(STDIN_FILENO + 1,
+            match select(in_fd + 1,
                     Some(&mut r_fds), None, Some(&mut e_fds), timeout.as_mut()) {
                 Ok(n) => break n,
                 Err(ref e) if e.errno() == Errno::EINTR => {
@@ -490,7 +514,7 @@ impl<'a> TerminalReadGuard<'a> {
             return Ok(Some(Event::Raw(n)));
         }
 
-        self.read_stdin(buf, timeout)
+        self.read_input(buf, timeout)
     }
 
     fn read_into_buffer(&mut self, timeout: Option<Duration>) -> io::Result<Option<Event>> {
@@ -506,7 +530,7 @@ impl<'a> TerminalReadGuard<'a> {
         unsafe {
             buf.set_len(cap);
 
-            r = self.read_stdin(&mut buf[len..], timeout);
+            r = self.read_input(&mut buf[len..], timeout);
 
             match r {
                 Ok(Some(Event::Raw(n))) => buf.set_len(len + n),
@@ -520,7 +544,7 @@ impl<'a> TerminalReadGuard<'a> {
         r
     }
 
-    fn read_stdin(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> io::Result<Option<Event>> {
+    fn read_input(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         // Check for a signal that may have already arrived.
         if let Some(sig) = take_signal() {
             return Ok(Some(Event::Signal(sig)));
@@ -536,7 +560,7 @@ impl<'a> TerminalReadGuard<'a> {
         }
 
         loop {
-            match read(STDIN_FILENO, buf) {
+            match read(self.term.in_fd, buf) {
                 Ok(n) => break Ok(Some(Event::Raw(n))),
                 Err(ref e) if e.errno() == Errno::EINTR => {
                     if let Some(sig) = take_signal() {
@@ -632,7 +656,7 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     pub fn size(&self) -> io::Result<Size> {
-        get_winsize(self.term.fd)
+        get_winsize(self.term.out_fd)
     }
 
     fn disable_keypad(&mut self) -> io::Result<()> {
@@ -986,7 +1010,7 @@ impl<'a> TerminalWriteGuard<'a> {
                 break Ok(());
             }
 
-            match write(self.term.fd, buf) {
+            match write(self.term.out_fd, buf) {
                 Ok(0) => break Err(io::Error::from(io::ErrorKind::WriteZero)),
                 Ok(n) => offset += n,
                 Err(e) if e.errno() == Errno::EINTR => continue,
@@ -1089,6 +1113,21 @@ pub struct PrepareState {
 #[derive(Copy, Clone, Debug)]
 struct Resume {
     config: PrepareConfig,
+}
+
+unsafe fn close_fd(fd: RawFd) {
+    drop(File::from_raw_fd(fd));
+}
+
+fn open_rw<P: AsRef<Path>>(path: P) -> io::Result<RawFd> {
+    use std::fs::OpenOptions;
+
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)?;
+
+    Ok(file.into_raw_fd())
 }
 
 #[repr(C)]
