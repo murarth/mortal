@@ -514,7 +514,16 @@ impl<'a> TerminalReadGuard<'a> {
             return Ok(Some(Event::Raw(n)));
         }
 
-        self.read_input(buf, timeout)
+        match self.read_input(buf, timeout)? {
+            Some(Event::Signal(sig)) => {
+                if let Some(event) = self.handle_signal(sig)? {
+                    Ok(Some(event))
+                } else {
+                    Ok(None)
+                }
+            }
+            r => Ok(r)
+        }
     }
 
     fn read_into_buffer(&mut self, timeout: Option<Duration>) -> io::Result<Option<Event>> {
