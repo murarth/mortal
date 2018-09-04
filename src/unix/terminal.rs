@@ -487,20 +487,20 @@ impl<'a> TerminalReadGuard<'a> {
     }
 
     pub fn read_event(&mut self, timeout: Option<Duration>) -> io::Result<Option<Event>> {
-        loop {
-            if let Some(ev) = self.try_read()? {
-                return Ok(Some(ev));
-            }
+        if let Some(ev) = self.try_read()? {
+            return Ok(Some(ev));
+        }
 
-            match self.read_into_buffer(timeout)? {
-                Some(Event::Raw(_)) => continue,
-                Some(Event::Signal(sig)) => {
-                    if let Some(ev) = self.handle_signal(sig)? {
-                        return Ok(Some(ev));
-                    }
+        match self.read_into_buffer(timeout)? {
+            Some(Event::Raw(_)) => self.try_read(),
+            Some(Event::Signal(sig)) => {
+                if let Some(ev) = self.handle_signal(sig)? {
+                    Ok(Some(ev))
+                } else {
+                    Ok(None)
                 }
-                r => return Ok(r)
             }
+            r => Ok(r)
         }
     }
 
