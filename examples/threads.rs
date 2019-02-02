@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use mortal::{Color, Terminal};
 
-use rand::{Rng, weak_rng};
+use rand::{Rng, seq::SliceRandom, thread_rng};
 
 // A unique color for each thread
 const COLORS: &[Color] = &[
@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
 
     // Give a random color to each thread
     let mut colors = COLORS.to_vec();
-    weak_rng().shuffle(&mut colors);
+    colors.shuffle(&mut thread_rng());
 
     for i in 0..5 {
         let name = format!("child{}", i);
@@ -52,7 +52,7 @@ fn main() -> io::Result<()> {
 
 fn run_task(name: &str, color: Color, term: &Terminal)
         -> io::Result<()> {
-    let mut rng = weak_rng();
+    let mut rng = thread_rng();
 
     for _ in 0..5 {
         sleep(Duration::from_millis(rng.gen_range(100, 300)));

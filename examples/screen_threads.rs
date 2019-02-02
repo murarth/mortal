@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use mortal::{Color, Cursor, Event, Key, PrepareConfig, Screen};
 
-use rand::{Rng, weak_rng};
+use rand::{Rng, seq::SliceRandom, thread_rng};
 
 // A unique color for each thread
 const COLORS: &[Color] = &[
@@ -37,7 +37,7 @@ fn main() -> io::Result<()> {
 
     // Give a random color to each thread
     let mut colors = COLORS.to_vec();
-    weak_rng().shuffle(&mut colors);
+    colors.shuffle(&mut thread_rng());
 
     screen.write_at((0, 0), "Running threads. Press 'q' to stop.");
     screen.set_cursor((0, 0));
@@ -81,7 +81,7 @@ fn main() -> io::Result<()> {
 
 fn run_task(name: &str, line: usize, color: Color, screen: &Screen,
         sender: &SyncSender<()>) -> io::Result<()> {
-    let mut rng = weak_rng();
+    let mut rng = thread_rng();
 
     loop {
         // Check whether the main thread is signalling an exit

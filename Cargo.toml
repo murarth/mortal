@@ -34,4 +34,4 @@ winapi = { version = "0.3", features = [
     "winbase", "wincon", "winerror", "winnt", "winuser" ] }
 
 [dev-dependencies]
-rand = "0.4"
+rand = "0.6"
