@@ -10,11 +10,11 @@ use std::time::Duration;
 
 use libc::{
     ioctl,
-    c_int, c_ushort, suseconds_t, time_t,
+    c_int, c_ushort, termios,
     STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, TIOCGWINSZ,
 };
 
-use nix::Errno;
+use nix::errno::Errno;
 use nix::sys::select::{select, FdSet};
 use nix::sys::signal::{
     sigaction,
@@ -22,11 +22,9 @@ use nix::sys::signal::{
 };
 use nix::sys::termios::{
     tcgetattr, tcsetattr,
-    SetArg, Termios,
-    ECHO, ICANON, ICRNL, INLCR, ISIG, IXON,
-    VMIN, VTIME,
+    SetArg, InputFlags, LocalFlags,
 };
-use nix::sys::time::TimeVal;
+use nix::sys::time::{TimeVal, TimeValLike};
 use nix::unistd::{read, write};
 
 use smallstr::SmallString;
@@ -101,7 +99,7 @@ struct Writer {
 
 impl Terminal {
     fn new(in_fd: RawFd, out_fd: RawFd, owned_fd: bool) -> io::Result<Terminal> {
-        let info = Database::from_env().map_err(to_io)?;
+        let info = Database::from_env().map_err(ti_to_io)?;
         let sequences = sequences(&info);
 
         Ok(Terminal{
@@ -318,11 +316,13 @@ impl<'a> TerminalReadGuard<'a> {
 
     pub fn prepare_with_lock(&mut self, writer: &mut TerminalWriteGuard,
             config: PrepareConfig) -> io::Result<PrepareState> {
-        let old_tio = tcgetattr(self.term.in_fd)?;
-        let mut tio = old_tio;
+        use nix::sys::termios::SpecialCharacterIndices::*;
+
+        let old_tio = tcgetattr(self.term.in_fd).map_err(nix_to_io)?;
+        let mut tio = old_tio.clone();
 
         let mut state = PrepareState{
-            old_tio,
+            old_tio: old_tio.into(),
             old_sigcont: None,
             old_sigint: None,
             old_sigtstp: None,
@@ -333,42 +333,40 @@ impl<'a> TerminalReadGuard<'a> {
             prev_resume: self.reader.resume,
         };
 
-        tio.c_iflag.remove(
+        tio.input_flags.remove(
             // Disable carriage return/line feed conversion
-            INLCR | ICRNL
+            InputFlags::INLCR | InputFlags::ICRNL
         );
 
-        tio.c_lflag.remove(
+        tio.local_flags.remove(
             // Disable canonical mode;
             // this gives us input without waiting for newline or EOF
-            // and disables line-editing, treating such inputs as characters
-            ICANON
+            // and disables line-editing, treating such inputs as characters.
+            // Disable ECHO, preventing input from being written to output.
+            LocalFlags::ICANON | LocalFlags::ECHO
         );
 
         // ISIG, when enabled, causes the process to receive signals when
         // Ctrl-C, Ctrl-\, etc. are input
         if config.block_signals {
-            tio.c_lflag.remove(ISIG);
+            tio.local_flags.remove(LocalFlags::ISIG);
         } else {
-            tio.c_lflag.insert(ISIG);
+            tio.local_flags.insert(LocalFlags::ISIG);
         }
 
         // IXON, when enabled, allows Ctrl-S/Ctrl-Q to suspend and restart inputs
         if config.enable_control_flow {
-            tio.c_iflag.insert(IXON);
+            tio.input_flags.insert(InputFlags::IXON);
         } else {
-            tio.c_iflag.remove(IXON);
+            tio.input_flags.remove(InputFlags::IXON);
         }
 
-        // Disable ECHO, preventing input from being written to output
-        tio.c_lflag.remove(ECHO);
-
         // Allow a read to return with 0 characters ready
-        tio.c_cc[VMIN] = 0;
+        tio.control_chars[VMIN as usize] = 0;
         // Allow a read to return after 0 deciseconds
-        tio.c_cc[VTIME] = 0;
+        tio.control_chars[VTIME as usize] = 0;
 
-        tcsetattr(self.term.in_fd, SetArg::TCSANOW, &tio)?;
+        tcsetattr(self.term.in_fd, SetArg::TCSANOW, &tio).map_err(nix_to_io)?;
 
         if config.enable_mouse {
             if writer.enable_mouse(config.always_track_motion)? {
@@ -389,17 +387,17 @@ impl<'a> TerminalReadGuard<'a> {
 
         // Continue and Resize are always handled by the internals,
         // but only reported if requested.
-        state.old_sigcont = Some(unsafe { sigaction(NixSignal::SIGCONT, &action)? });
-        state.old_sigwinch = Some(unsafe { sigaction(NixSignal::SIGWINCH, &action)? });
+        state.old_sigcont = Some(unsafe { sigaction(NixSignal::SIGCONT, &action).map_err(nix_to_io)? });
+        state.old_sigwinch = Some(unsafe { sigaction(NixSignal::SIGWINCH, &action).map_err(nix_to_io)? });
 
         if config.report_signals.contains(Signal::Interrupt) {
-            state.old_sigint = Some(unsafe { sigaction(NixSignal::SIGINT, &action)? });
+            state.old_sigint = Some(unsafe { sigaction(NixSignal::SIGINT, &action).map_err(nix_to_io)? });
         }
         if config.report_signals.contains(Signal::Suspend) {
-            state.old_sigtstp = Some(unsafe { sigaction(NixSignal::SIGTSTP, &action)? });
+            state.old_sigtstp = Some(unsafe { sigaction(NixSignal::SIGTSTP, &action).map_err(nix_to_io)? });
         }
         if config.report_signals.contains(Signal::Quit) {
-            state.old_sigquit = Some(unsafe { sigaction(NixSignal::SIGQUIT, &action)? });
+            state.old_sigquit = Some(unsafe { sigaction(NixSignal::SIGQUIT, &action).map_err(nix_to_io)? });
         }
 
         self.reader.report_signals = config.report_signals;
@@ -427,23 +425,23 @@ impl<'a> TerminalReadGuard<'a> {
 
         writer.flush()?;
 
-        tcsetattr(self.term.in_fd, SetArg::TCSANOW, &state.old_tio)?;
+        tcsetattr(self.term.in_fd, SetArg::TCSANOW, &state.old_tio.into()).map_err(nix_to_io)?;
 
         unsafe {
             if let Some(ref old) = state.old_sigcont {
-                sigaction(NixSignal::SIGCONT, old)?;
+                sigaction(NixSignal::SIGCONT, old).map_err(nix_to_io)?;
             }
             if let Some(ref old) = state.old_sigint {
-                sigaction(NixSignal::SIGINT, old)?;
+                sigaction(NixSignal::SIGINT, old).map_err(nix_to_io)?;
             }
             if let Some(ref old) = state.old_sigtstp {
-                sigaction(NixSignal::SIGTSTP, old)?;
+                sigaction(NixSignal::SIGTSTP, old).map_err(nix_to_io)?;
             }
             if let Some(ref old) = state.old_sigquit {
-                sigaction(NixSignal::SIGQUIT, old)?;
+                sigaction(NixSignal::SIGQUIT, old).map_err(nix_to_io)?;
             }
             if let Some(ref old) = state.old_sigwinch {
-                sigaction(NixSignal::SIGWINCH, old)?;
+                sigaction(NixSignal::SIGWINCH, old).map_err(nix_to_io)?;
             }
         }
 
@@ -474,12 +472,12 @@ impl<'a> TerminalReadGuard<'a> {
             match select(in_fd + 1,
                     Some(&mut r_fds), None, Some(&mut e_fds), timeout.as_mut()) {
                 Ok(n) => break n,
-                Err(ref e) if e.errno() == Errno::EINTR => {
+                Err(ref e) if e.as_errno() == Some(Errno::EINTR) => {
                     if get_signal().is_some() {
                         return Ok(true);
                     }
                 }
-                Err(e) => return Err(e.into())
+                Err(e) => return Err(nix_to_io(e))
             }
         };
 
@@ -571,12 +569,12 @@ impl<'a> TerminalReadGuard<'a> {
         loop {
             match read(self.term.in_fd, buf) {
                 Ok(n) => break Ok(Some(Event::Raw(n))),
-                Err(ref e) if e.errno() == Errno::EINTR => {
+                Err(ref e) if e.as_errno() == Some(Errno::EINTR) => {
                     if let Some(sig) = take_signal() {
                         return Ok(Some(Event::Signal(sig)));
                     }
                 }
-                Err(e) => return Err(e.into())
+                Err(e) => return Err(nix_to_io(e))
             }
         }
     }
@@ -1022,8 +1020,8 @@ impl<'a> TerminalWriteGuard<'a> {
             match write(self.term.out_fd, buf) {
                 Ok(0) => break Err(io::Error::from(io::ErrorKind::WriteZero)),
                 Ok(n) => offset += n,
-                Err(e) if e.errno() == Errno::EINTR => continue,
-                Err(e) => break Err(e.into())
+                Err(e) if e.as_errno() == Some(Errno::EINTR) => continue,
+                Err(e) => break Err(nix_to_io(e))
             }
         };
 
@@ -1035,7 +1033,7 @@ impl<'a> TerminalWriteGuard<'a> {
         exp
             .with(&mut writer.context)
             .to(&mut writer.out_buffer)
-            .map_err(to_io)
+            .map_err(ti_to_io)
     }
 }
 
@@ -1108,7 +1106,7 @@ fn sequences(info: &Database) -> SeqMap {
 }
 
 pub struct PrepareState {
-    old_tio: Termios,
+    old_tio: termios,
     old_sigcont: Option<SigAction>,
     old_sigint: Option<SigAction>,
     old_sigtstp: Option<SigAction>,
@@ -1166,7 +1164,15 @@ fn get_winsize(fd: c_int) -> io::Result<Size> {
     }
 }
 
-fn to_io(e: terminfo::Error) -> io::Error {
+fn nix_to_io(e: nix::Error) -> io::Error {
+    if let Some(errno) = e.as_errno() {
+        io::Error::from_raw_os_error(errno as i32)
+    } else {
+        io::Error::new(io::ErrorKind::Other, e.to_string())
+    }
+}
+
+fn ti_to_io(e: terminfo::Error) -> io::Error {
     match e {
         terminfo::Error::Io(e) => e,
         terminfo::Error::NotFound => io::Error::new(
@@ -1179,17 +1185,16 @@ fn to_io(e: terminfo::Error) -> io::Error {
 }
 
 fn to_timeval(d: Duration) -> TimeVal {
-    let sec = match d.as_secs() {
-        n if n > time_t::max_value() as u64 => time_t::max_value(),
-        n => n as time_t
+    const MAX_SECS: i64 = i64::max_value() / 1_000;
+
+    let secs = match d.as_secs() {
+        n if n > MAX_SECS as u64 => MAX_SECS,
+        n => n as i64,
     };
 
-    let nano = d.subsec_nanos();
+    let millis = d.subsec_millis() as i64;
 
-    TimeVal{
-        tv_sec: sec,
-        tv_usec: nano as suseconds_t / 1_000,
-    }
+    TimeVal::milliseconds(secs + millis)
 }
 
 fn peek_event(buf: &[u8], sequences: &SeqMap)
