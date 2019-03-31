@@ -1194,7 +1194,7 @@ fn to_timeval(d: Duration) -> TimeVal {
 
     let millis = d.subsec_millis() as i64;
 
-    TimeVal::milliseconds(secs + millis)
+    TimeVal::milliseconds(secs * 1_000 + millis)
 }
 
 fn peek_event(buf: &[u8], sequences: &SeqMap)
