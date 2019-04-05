@@ -53,6 +53,7 @@ pub mod sequence;
 pub mod signal;
 pub mod terminal;
 pub mod util;
+#[macro_use] pub mod macros;
 
 #[cfg(unix)]
 #[path = "unix/mod.rs"]
