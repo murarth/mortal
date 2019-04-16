@@ -37,7 +37,9 @@
 /// - a reset specifier either of `reset`, `!fg`, `!bg`, `!sty`
 /// - foreground variable: `fg=` plus the name of a variable
 /// - background variable: `bg=` plus the name of a variable
-/// - style variable: `sty=` plus the name of a variable
+/// - style variable (overriding): `sty=` plus the name of a variable
+/// - style variable (additive): `sty+=` plus the name of a variable
+/// - style variable (subtractive): `sty-=` plus the name of a variable
 /// - theme variable: `=` plus the name of a variable
 ///
 /// The _output instructions_ may be either of the following:
