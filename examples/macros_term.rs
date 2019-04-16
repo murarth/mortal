@@ -107,8 +107,8 @@ pub fn main() {
 		bold underline red #green "def" !sty "!sty");
 	
 	// Stuff
-	let theme = mortal::macros::Theme{
-		fg:Some(mortal::Color::Magenta), .. mortal::macros::Theme::default()
+	let theme = mortal::Theme{
+		fg:Some(mortal::Color::Magenta), .. mortal::Theme::default()
 	};
 	term_write!(term; [=theme] "xae" bold ("s{}t", " Hi "));
 	term_write!(term; [fg = mortal::Color::Red] "xae" bold ("s{}t", " Hi "));

@@ -1,21 +1,8 @@
-//! Contains the macros for fancy printing
+//! Provides macros easier printing with colors and styles.
 //! See: https://github.com/murarth/mortal/issues/7
 
 
-use crate::PrepareConfig;
-use crate::Color;
-use crate::Style;
 
-/// A Theme
-#[derive(Clone,Debug,Default)]
-pub struct Theme {
-	/// The style
-    pub style: Style,
-	/// The foreground color
-    pub fg: Option<Color>,
-	/// The background color
-    pub bg: Option<Color>,
-}
 
 /// Writes on term
 #[macro_export]
@@ -188,7 +175,7 @@ macro_rules! term_write {
 	};
 	( $term:ident; [ = $var:expr ] $($rest:tt)*) => {
 		let x = &$var;
-		let th = x as &$crate::macros::Theme;
+		let th = x as &$crate::Theme;
 		$term.set_fg(th.fg).unwrap();
 		$term.set_bg(th.bg).unwrap();
 		$term.set_style(th.style).unwrap();

@@ -40,7 +40,7 @@ pub use screen::{Screen, ScreenReadGuard, ScreenWriteGuard};
 pub use sequence::{FindResult, SequenceMap};
 pub use signal::{Signal, SignalSet};
 pub use terminal::{
-    Color, Cursor, CursorMode, Size, Style,
+    Color, Cursor, CursorMode, Size, Style, Theme,
     Event, Key, MouseEvent, MouseInput, MouseButton, ModifierState,
     PrepareConfig, PrepareState,
     Terminal, TerminalReadGuard, TerminalWriteGuard,
