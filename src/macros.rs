@@ -31,123 +31,123 @@ macro_rules! term_write {
 	};
 	
 	// Foreground Colors
-	( $term:ident; black $($rest:tt)*) => {
+	( $term:ident; [ black ] $($rest:tt)*) => {
 		$term.set_fg($crate::Color::Black);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; blue $($rest:tt)*) => {
+	( $term:ident; [ blue ] $($rest:tt)*) => {
 		$term.set_fg($crate::Color::Blue);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; cyan $($rest:tt)*) => {
+	( $term:ident; [ cyan ] $($rest:tt)*) => {
 		$term.set_fg($crate::Color::Cyan);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; green $($rest:tt)*) => {
+	( $term:ident; [ green ] $($rest:tt)*) => {
 		$term.set_fg($crate::Color::Green);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; magenta $($rest:tt)*) => {
+	( $term:ident; [ magenta ] $($rest:tt)*) => {
 		$term.set_fg($crate::Color::Magenta);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; red $($rest:tt)*) => {
+	( $term:ident; [ red ] $($rest:tt)*) => {
 		$term.set_fg($crate::Color::Red);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; white $($rest:tt)*) => {
+	( $term:ident; [ white ] $($rest:tt)*) => {
 		$term.set_fg($crate::Color::White);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; yellow $($rest:tt)*) => {
+	( $term:ident; [ yellow ] $($rest:tt)*) => {
 		$term.set_fg($crate::Color::Yellow);
 		term_write!($term; $($rest)*);
 	};
 	
 	// Background Colors
-	( $term:ident; #black $($rest:tt)*) => {
+	( $term:ident; [ # black ] $($rest:tt)*) => {
 		$term.set_bg($crate::Color::Black);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; #blue $($rest:tt)*) => {
+	( $term:ident; [ # blue ] $($rest:tt)*) => {
 		$term.set_bg($crate::Color::Blue);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; #cyan $($rest:tt)*) => {
+	( $term:ident; [ # cyan ] $($rest:tt)*) => {
 		$term.set_bg($crate::Color::Cyan);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; #green $($rest:tt)*) => {
+	( $term:ident; [ # green ] $($rest:tt)*) => {
 		$term.set_bg($crate::Color::Green);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; #magenta $($rest:tt)*) => {
+	( $term:ident; [ # magenta ] $($rest:tt)*) => {
 		$term.set_bg($crate::Color::Magenta);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; #red $($rest:tt)*) => {
+	( $term:ident; [ # red ] $($rest:tt)*) => {
 		$term.set_bg($crate::Color::Red);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; #white $($rest:tt)*) => {
+	( $term:ident; [ # white ] $($rest:tt)*) => {
 		$term.set_bg($crate::Color::White);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; #yellow $($rest:tt)*) => {
+	( $term:ident; [ # yellow ] $($rest:tt)*) => {
 		$term.set_bg($crate::Color::Yellow);
 		term_write!($term; $($rest)*);
 	};
 	
 	// Adding Style
-	( $term:ident; bold $($rest:tt)*) => {
+	( $term:ident; [ bold ] $($rest:tt)*) => {
 		$term.add_style($crate::Style::BOLD);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; italic $($rest:tt)*) => {
+	( $term:ident; [ italic ] $($rest:tt)*) => {
 		$term.add_style($crate::Style::ITALIC);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; reverse $($rest:tt)*) => {
+	( $term:ident; [ reverse ] $($rest:tt)*) => {
 		$term.add_style($crate::Style::REVERSE);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; underline $($rest:tt)*) => {
+	( $term:ident; [ underline ] $($rest:tt)*) => {
 		$term.add_style($crate::Style::UNDERLINE);
 		term_write!($term; $($rest)*);
 	};
 	
 	// Removing Style
-	( $term:ident; !bold $($rest:tt)*) => {
+	( $term:ident; [ ! bold ] $($rest:tt)*) => {
 		$term.remove_style($crate::Style::BOLD);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; !italic $($rest:tt)*) => {
+	( $term:ident; [ ! italic ] $($rest:tt)*) => {
 		$term.remove_style($crate::Style::ITALIC);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; !reverse $($rest:tt)*) => {
+	( $term:ident; [ ! reverse ] $($rest:tt)*) => {
 		$term.remove_style($crate::Style::REVERSE);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; !underline $($rest:tt)*) => {
+	( $term:ident; [ ! underline ] $($rest:tt)*) => {
 		$term.remove_style($crate::Style::UNDERLINE);
 		term_write!($term; $($rest)*);
 	};
 	
 	// Resets
-	( $term:ident; reset $($rest:tt)*) => {
+	( $term:ident; [ reset ] $($rest:tt)*) => {
 		$term.clear_attributes();
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; !fg $($rest:tt)*) => {
+	( $term:ident; [ ! fg ] $($rest:tt)*) => {
 		$term.set_fg(None);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; !bg $($rest:tt)*) => {
+	( $term:ident; [ ! bg ] $($rest:tt)*) => {
 		$term.set_bg(None);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; !sty $($rest:tt)*) => {
+	( $term:ident; [ ! sty ] $($rest:tt)*) => {
 		$term.set_style($crate::Style::default());
 		term_write!($term; $($rest)*);
 	};
@@ -180,17 +180,6 @@ macro_rules! term_write {
 		$term.set_bg(th.bg).unwrap();
 		$term.set_style(th.style).unwrap();
 		term_write!($term; $($rest)*);
-	};
-	
-	// Unwrap primitive formats from brackets []
-	( $term:ident; [ ! $style:ident ] $($rest:tt)*) => {
-		term_write!($term; ! $style $($rest)*);
-	};
-	( $term:ident; [ # $color:ident ] $($rest:tt)*) => {
-		term_write!($term; # $color $($rest)*);
-	};
-	( $term:ident; [ $prim:ident ] $($rest:tt)*) => {
-		term_write!($term; $prim $($rest)*);
 	};
 	
 	// Single expressing printing
