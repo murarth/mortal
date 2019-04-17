@@ -34,12 +34,12 @@
 /// - a subtractive style specifier: similar to additive but with a
 ///   leading exclamation mark such as (`!bold`, `!italic`, `!underline`,
 ///   `!reverse`)
-/// - a reset specifier either of `reset`, `!fg`, `!bg`, `!sty`
+/// - a reset specifier either of `reset`, `!fg`, `!bg`, `!style`
 /// - foreground variable: `fg=` plus the name of a variable
 /// - background variable: `bg=` plus the name of a variable
-/// - style variable (overriding): `sty=` plus the name of a variable
-/// - style variable (additive): `sty+=` plus the name of a variable
-/// - style variable (subtractive): `sty-=` plus the name of a variable
+/// - style variable (overriding): `style=` plus the name of a variable
+/// - style variable (additive): `style+=` plus the name of a variable
+/// - style variable (subtractive): `style-=` plus the name of a variable
 /// - theme variable: `=` plus the name of a variable
 ///
 /// The _output instructions_ may be either of the following:
@@ -117,14 +117,6 @@ macro_rules! term_write {
 	// Final rule
 	( $term:ident $( ; )* ) => {
 		$term.clear_attributes();
-	};
-	
-	// Optional , and ; as separators
-	( $term:ident; , $($rest:tt)* ) => {
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; ; $($rest:tt)* ) => {
-		term_write!($term; $($rest)*);
 	};
 	
 	// Foreground Colors
@@ -244,7 +236,7 @@ macro_rules! term_write {
 		$term.set_bg(None);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; [ ! sty ] $($rest:tt)*) => {
+	( $term:ident; [ ! style ] $($rest:tt)*) => {
 		$term.set_style($crate::Style::default());
 		term_write!($term; $($rest)*);
 	};
@@ -258,15 +250,15 @@ macro_rules! term_write {
 		$term.set_fg($e);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; [ sty = $e:expr ] $($rest:tt)*) => {
+	( $term:ident; [ style = $e:expr ] $($rest:tt)*) => {
 		$term.set_style($e);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; [ sty += $e:expr ] $($rest:tt)*) => {
+	( $term:ident; [ style += $e:expr ] $($rest:tt)*) => {
 		$term.add_style($e);
 		term_write!($term; $($rest)*);
 	};
-	( $term:ident; [ sty -= $e:expr ] $($rest:tt)*) => {
+	( $term:ident; [ style -= $e:expr ] $($rest:tt)*) => {
 		$term.remove_style($e);
 		term_write!($term; $($rest)*);
 	};

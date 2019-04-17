@@ -18,7 +18,7 @@ pub fn main() {
 	term_writeln!(lock; "just term: " [red]("{} #{} {}!", str_hello, value, str_world)
 		[reset] ("{}", 42) [bg=x]("XxX"));
 	
-	term_writeln!(lock lock; "lock term: ", [red],("{} #{} {}!", str_hello, 2, 1)
+	term_writeln!(lock lock; "lock term: " [red]("{} #{} {}!", str_hello, 2, 1)
 		[reset] ("{}", 42) [bg=x]("XxX"));
 	
 	let term = lock;
@@ -53,24 +53,14 @@ pub fn main() {
 	);
 	term_writeln!( term; );
 	
-	// Some primitive syntax without brackets
-	term_write!(term; [red] "red");
-	term_write!(term; [blue] "blue" [green] "green" [reset] "reset");
-	term_write!(term; ,,;,;; " ");
-	term_write!(term; [blue] "blue" [#green] "#gr" [!fg] "!fg" [!bg] "!bg" );
-	term_write!(term; ;;;,;, " ");
-	term_write!(term; [bold] "bold" [underline] "uline" [red] "red"
-		[!bold] "!bold" [!sty] "!sty" );
-	term_writeln!(term);
-	
 	// Some primitive syntax with brackets
 	term_write!(term; [red] ("red"));
 	term_write!(term; [blue] ("blue") [green] ("green") [reset] ("reset"));
-	term_write!(term; ,,;,;; (" "));
+	term_write!(term; (" "));
 	term_write!(term; [blue] ("blue") [#green] ("#gr") [!fg] ("!fg") [!bg] ("!bg") );
-	term_write!(term; ;;;,;, (" "));
+	term_write!(term; " ");
 	term_write!(term; [bold] ("bold") [underline] ("uline") [red] ("red")
-		[!bold] ("!bold") [!sty] ("!sty") );
+		[!bold] ("!bold") [!style] ("!style") );
 	term_writeln!(term);
 	
 	// Printing
@@ -104,7 +94,7 @@ pub fn main() {
 	term_write!(term; " "
 		[bold] [underline] [red] [#green] "def" [!bg] "!bg");
 	term_writeln!(term; " "
-		[bold] [underline] [red] [#green] "def" [!sty] "!sty");
+		[bold] [underline] [red] [#green] "def" [!style] "!style");
 	
 	// Stuff
 	let theme = mortal::Theme{
@@ -133,11 +123,6 @@ pub fn main() {
 	term_write!(term; [fg=mortal::Color::Green] (:a));
 	term_write!(term; [fg=c2] (?a));
 	term_writeln!(term);
-	term_write!(term; ,,;;;7,,;;;,;42,;;;1;,;,,;);
-	term_writeln!(term);
-	
-	//term.refresh().unwrap();
-	//term.wait_event(Some(std::time::Duration::from_millis(900))).unwrap();
 	
 }
 
