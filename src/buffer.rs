@@ -559,7 +559,7 @@ mod test {
 
             let next_line = lines[line];
 
-            assert_eq!(text.trim_right(), next_line,
+            assert_eq!(text.trim_end(), next_line,
                 "buffer line {} does not match at line {}", line, line_num);
 
             text.clear();
