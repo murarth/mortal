@@ -53,6 +53,72 @@ bitflags!{
     }
 }
 
+
+/// Represents a terminal output theme.
+///
+/// A theme consists of a foreground and background color as well as a style.
+#[derive(Clone,Debug,Default)]
+pub struct Theme {
+    /// The foreground color
+    pub fg: Option<Color>,
+    /// The background color
+    pub bg: Option<Color>,
+    /// The style
+    pub style: Style,
+}
+
+impl Theme {
+    /// Creates a new theme with given values.
+    ///
+    /// # Note
+    ///
+    /// In order to create a Theme using default values you might want to use
+    /// `Theme::default()` instead.
+    pub fn new<F,B,S>(fg: F, bg: B, style: S) -> Theme
+        where
+            F: Into<Option<Color>>,
+            B: Into<Option<Color>>,
+            S: Into<Option<Style>> {
+        
+        Theme {
+            fg: fg.into(),
+            bg: bg.into(),
+            style: style.into().unwrap_or_default(),
+        }
+    }
+
+    /// Sets the foreground color on the given Theme and returns the new.
+    pub fn fg<F>(mut self, fg: F) -> Theme
+        where
+            F: Into<Option<Color>> {
+        
+        self.fg = fg.into();
+        
+        self
+    }
+
+    /// Sets the background color on the given Theme and returns the new.
+    pub fn bg<B>(mut self, bg: B) -> Theme
+        where
+            B: Into<Option<Color>> {
+        
+        self.bg = bg.into();
+        
+        self
+    }
+
+    /// Sets the style on the given Theme and returns the new.
+    pub fn style<S>(mut self, style: S) -> Theme
+        where
+            S: Into<Option<Style>> {
+        
+        self.style = style.into().unwrap_or_default();
+        
+        self
+    }
+}
+
+
 /// Represents the cursor position in a terminal device
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct Cursor {
