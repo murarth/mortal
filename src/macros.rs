@@ -65,7 +65,7 @@ use std::io;
 /// term_writeln!(term, "The answer is: " [bold] (: value) [reset])?;
 ///
 /// let theme = Theme::new(color, None, style);
-/// term_writeln!(term, [theme=theme] "Red, bold text" [reset])?;
+/// term_writeln!(term, [theme=theme] "Green, bold text" [reset])?;
 /// # Ok(())
 /// # }
 /// ```
