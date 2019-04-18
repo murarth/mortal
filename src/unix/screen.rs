@@ -2,13 +2,13 @@ use std::io;
 use std::sync::{LockResult, Mutex, MutexGuard, TryLockResult};
 use std::time::Duration;
 
-use buffer::ScreenBuffer;
-use priv_util::{
+use crate::buffer::ScreenBuffer;
+use crate::priv_util::{
     map_lock_result, map_try_lock_result,
     map2_lock_result, map2_try_lock_result,
 };
-use sys::{Terminal, TerminalReadGuard, TerminalWriteGuard, PrepareState};
-use terminal::{Color, Cursor, CursorMode, Event, Size, Style, PrepareConfig};
+use crate::sys::{Terminal, TerminalReadGuard, TerminalWriteGuard, PrepareState};
+use crate::terminal::{Color, Cursor, CursorMode, Event, Size, Style, PrepareConfig};
 
 pub struct Screen {
     term: Terminal,

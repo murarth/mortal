@@ -5,9 +5,9 @@ use std::io;
 use std::sync::{LockResult, TryLockResult};
 use std::time::Duration;
 
-use priv_util::{map_lock_result, map_try_lock_result};
-use sys;
-use terminal::{
+use crate::priv_util::{map_lock_result, map_try_lock_result};
+use crate::sys;
+use crate::terminal::{
     Color, Cursor, CursorMode, Event, PrepareConfig, Size, Style, Theme,
     Terminal,
 };
@@ -583,21 +583,21 @@ impl<'a> ScreenWriteGuard<'a> {
 }
 
 #[cfg(unix)]
-impl ::unix::TerminalExt for Screen {
+impl crate::unix::TerminalExt for Screen {
     fn read_raw(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         self.0.read_raw(buf, timeout)
     }
 }
 
 #[cfg(unix)]
-impl<'a> ::unix::TerminalExt for ScreenReadGuard<'a> {
+impl<'a> crate::unix::TerminalExt for ScreenReadGuard<'a> {
     fn read_raw(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         self.0.read_raw(buf, timeout)
     }
 }
 
 #[cfg(windows)]
-impl ::windows::TerminalExt for Screen {
+impl crate::windows::TerminalExt for Screen {
     fn read_raw(&mut self, buf: &mut [u16], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         self.0.read_raw(buf, timeout)
     }
@@ -609,7 +609,7 @@ impl ::windows::TerminalExt for Screen {
 }
 
 #[cfg(windows)]
-impl<'a> ::windows::TerminalExt for ScreenReadGuard<'a> {
+impl<'a> crate::windows::TerminalExt for ScreenReadGuard<'a> {
     fn read_raw(&mut self, buf: &mut [u16], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         self.0.read_raw(buf, timeout)
     }

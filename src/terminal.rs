@@ -5,9 +5,9 @@ use std::io;
 use std::sync::{LockResult, TryLockResult};
 use std::time::Duration;
 
-use priv_util::{map_lock_result, map_try_lock_result};
-use signal::{Signal, SignalSet};
-use sys;
+use crate::priv_util::{map_lock_result, map_try_lock_result};
+use crate::signal::{Signal, SignalSet};
+use crate::sys;
 
 /// Represents a color attribute applied to text foreground or background.
 ///
@@ -287,7 +287,7 @@ pub enum Key {
 
 impl From<char> for Key {
     fn from(ch: char) -> Key {
-        use util::{is_ctrl, unctrl_lower};
+        use crate::util::{is_ctrl, unctrl_lower};
 
         match ch {
             '\x1b' => Key::Escape,
@@ -1105,28 +1105,28 @@ impl<'a> TerminalWriteGuard<'a> {
 use std::path::Path;
 
 #[cfg(unix)]
-impl ::unix::OpenTerminalExt for Terminal {
+impl crate::unix::OpenTerminalExt for Terminal {
     fn from_path<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         sys::Terminal::open(path).map(Terminal)
     }
 }
 
 #[cfg(unix)]
-impl ::unix::TerminalExt for Terminal {
+impl crate::unix::TerminalExt for Terminal {
     fn read_raw(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         self.0.read_raw(buf, timeout)
     }
 }
 
 #[cfg(unix)]
-impl<'a> ::unix::TerminalExt for TerminalReadGuard<'a> {
+impl<'a> crate::unix::TerminalExt for TerminalReadGuard<'a> {
     fn read_raw(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         self.0.read_raw(buf, timeout)
     }
 }
 
 #[cfg(windows)]
-impl ::windows::TerminalExt for Terminal {
+impl crate::windows::TerminalExt for Terminal {
     fn read_raw(&mut self, buf: &mut [u16], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         self.0.read_raw(buf, timeout)
     }
@@ -1138,7 +1138,7 @@ impl ::windows::TerminalExt for Terminal {
 }
 
 #[cfg(windows)]
-impl<'a> ::windows::TerminalExt for TerminalReadGuard<'a> {
+impl<'a> crate::windows::TerminalExt for TerminalReadGuard<'a> {
     fn read_raw(&mut self, buf: &mut [u16], timeout: Option<Duration>) -> io::Result<Option<Event>> {
         self.0.read_raw(buf, timeout)
     }

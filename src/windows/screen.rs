@@ -5,16 +5,16 @@ use std::time::Duration;
 use winapi::shared::ntdef::HANDLE;
 use winapi::um::wincon::INPUT_RECORD;
 
-use buffer::ScreenBuffer;
-use priv_util::{
+use crate::buffer::ScreenBuffer;
+use crate::priv_util::{
     map_lock_result, map_try_lock_result,
     map2_lock_result, map2_try_lock_result,
 };
-use sys::terminal::{
+use crate::sys::terminal::{
     size_event, PrepareState,
     Terminal, TerminalReadGuard, TerminalWriteGuard,
 };
-use terminal::{Color, Cursor, CursorMode, Event, PrepareConfig, Size, Style};
+use crate::terminal::{Color, Cursor, CursorMode, Event, PrepareConfig, Size, Style};
 
 pub struct Screen {
     term: Terminal,

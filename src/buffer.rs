@@ -3,9 +3,9 @@ use std::ops::Range;
 
 use smallstr::SmallString;
 
-use priv_util::is_visible;
-use terminal::{Color, Cursor, Size, Style, Theme};
-use util::{char_width, is_combining_mark};
+use crate::priv_util::is_visible;
+use crate::terminal::{Color, Cursor, Size, Style, Theme};
+use crate::util::{char_width, is_combining_mark};
 
 const TAB_STOP: usize = 8;
 
@@ -280,17 +280,17 @@ impl ScreenBuffer {
 // All methods accept `&self`. Interior mutability is required.
 macro_rules! forward_screen_buffer_methods {
     ( |$slf:ident| $field:expr ) => {
-        pub fn size(&self) -> ::terminal::Size {
+        pub fn size(&self) -> crate::terminal::Size {
             let $slf = self;
             $field.size()
         }
 
-        pub fn cursor(&self) -> ::terminal::Cursor {
+        pub fn cursor(&self) -> crate::terminal::Cursor {
             let $slf = self;
             $field.cursor()
         }
 
-        pub fn set_cursor(&self, pos: ::terminal::Cursor) {
+        pub fn set_cursor(&self, pos: crate::terminal::Cursor) {
             let $slf = self;
             $field.set_cursor(pos);
         }
@@ -310,32 +310,32 @@ macro_rules! forward_screen_buffer_methods {
             $field.clear_attributes();
         }
 
-        pub fn add_style(&self, style: ::terminal::Style) {
+        pub fn add_style(&self, style: crate::terminal::Style) {
             let $slf = self;
             $field.add_style(style);
         }
 
-        pub fn remove_style(&self, style: ::terminal::Style) {
+        pub fn remove_style(&self, style: crate::terminal::Style) {
             let $slf = self;
             $field.remove_style(style);
         }
 
-        pub fn set_style(&self, style: ::terminal::Style) {
+        pub fn set_style(&self, style: crate::terminal::Style) {
             let $slf = self;
             $field.set_style(style);
         }
 
-        pub fn set_fg(&self, fg: Option<::terminal::Color>) {
+        pub fn set_fg(&self, fg: Option<crate::terminal::Color>) {
             let $slf = self;
             $field.set_fg(fg);
         }
 
-        pub fn set_bg(&self, bg: Option<::terminal::Color>) {
+        pub fn set_bg(&self, bg: Option<crate::terminal::Color>) {
             let $slf = self;
             $field.set_bg(bg);
         }
 
-        pub fn set_theme(&self, theme: ::terminal::Theme) {
+        pub fn set_theme(&self, theme: crate::terminal::Theme) {
             let $slf = self;
             $field.set_theme(theme)
         }
@@ -350,21 +350,21 @@ macro_rules! forward_screen_buffer_methods {
             let _ = $field.write_str(s);
         }
 
-        pub fn write_at(&self, pos: ::terminal::Cursor, text: &str) {
+        pub fn write_at(&self, pos: crate::terminal::Cursor, text: &str) {
             let $slf = self;
             let _ = $field.write_at(pos, text);
         }
 
         pub fn write_styled(&self,
-                fg: Option<::terminal::Color>, bg: Option<::terminal::Color>,
-                style: ::terminal::Style, text: &str) {
+                fg: Option<crate::terminal::Color>, bg: Option<crate::terminal::Color>,
+                style: crate::terminal::Style, text: &str) {
             let $slf = self;
             let _ = $field.write_styled(fg, bg, style, text);
         }
 
-        pub fn write_styled_at(&self, pos: ::terminal::Cursor,
-                fg: Option<::terminal::Color>, bg: Option<::terminal::Color>,
-                style: ::terminal::Style, text: &str) {
+        pub fn write_styled_at(&self, pos: crate::terminal::Cursor,
+                fg: Option<crate::terminal::Color>, bg: Option<crate::terminal::Color>,
+                style: crate::terminal::Style, text: &str) {
             let $slf = self;
             let _ = $field.write_styled_at(pos, fg, bg, style, text);
         }
@@ -374,17 +374,17 @@ macro_rules! forward_screen_buffer_methods {
 // Same as above, but methods take `&mut self` where appropriate.
 macro_rules! forward_screen_buffer_mut_methods {
     ( |$slf:ident| $field:expr ) => {
-        pub fn size(&self) -> ::terminal::Size {
+        pub fn size(&self) -> crate::terminal::Size {
             let $slf = self;
             $field.size()
         }
 
-        pub fn cursor(&self) -> ::terminal::Cursor {
+        pub fn cursor(&self) -> crate::terminal::Cursor {
             let $slf = self;
             $field.cursor()
         }
 
-        pub fn set_cursor(&mut self, pos: ::terminal::Cursor) {
+        pub fn set_cursor(&mut self, pos: crate::terminal::Cursor) {
             let $slf = self;
             $field.set_cursor(pos);
         }
@@ -404,32 +404,32 @@ macro_rules! forward_screen_buffer_mut_methods {
             $field.clear_attributes();
         }
 
-        pub fn add_style(&mut self, style: ::terminal::Style) {
+        pub fn add_style(&mut self, style: crate::terminal::Style) {
             let $slf = self;
             $field.add_style(style);
         }
 
-        pub fn remove_style(&mut self, style: ::terminal::Style) {
+        pub fn remove_style(&mut self, style: crate::terminal::Style) {
             let $slf = self;
             $field.remove_style(style);
         }
 
-        pub fn set_style(&mut self, style: ::terminal::Style) {
+        pub fn set_style(&mut self, style: crate::terminal::Style) {
             let $slf = self;
             $field.set_style(style);
         }
 
-        pub fn set_fg(&mut self, fg: Option<::terminal::Color>) {
+        pub fn set_fg(&mut self, fg: Option<crate::terminal::Color>) {
             let $slf = self;
             $field.set_fg(fg);
         }
 
-        pub fn set_bg(&mut self, bg: Option<::terminal::Color>) {
+        pub fn set_bg(&mut self, bg: Option<crate::terminal::Color>) {
             let $slf = self;
             $field.set_bg(bg);
         }
 
-        pub fn set_theme(&mut self, theme: ::terminal::Theme) {
+        pub fn set_theme(&mut self, theme: crate::terminal::Theme) {
             let $slf = self;
             $field.set_theme(theme);
         }
@@ -444,21 +444,21 @@ macro_rules! forward_screen_buffer_mut_methods {
             let _ = $field.write_str(s);
         }
 
-        pub fn write_at(&mut self, pos: ::terminal::Cursor, text: &str) {
+        pub fn write_at(&mut self, pos: crate::terminal::Cursor, text: &str) {
             let $slf = self;
             let _ = $field.write_at(pos, text);
         }
 
         pub fn write_styled(&mut self,
-                fg: Option<::terminal::Color>, bg: Option<::terminal::Color>,
-                style: ::terminal::Style, text: &str) {
+                fg: Option<crate::terminal::Color>, bg: Option<crate::terminal::Color>,
+                style: crate::terminal::Style, text: &str) {
             let $slf = self;
             let _ = $field.write_styled(fg, bg, style, text);
         }
 
-        pub fn write_styled_at(&mut self, pos: ::terminal::Cursor,
-                fg: Option<::terminal::Color>, bg: Option<::terminal::Color>,
-                style: ::terminal::Style, text: &str) {
+        pub fn write_styled_at(&mut self, pos: crate::terminal::Cursor,
+                fg: Option<crate::terminal::Color>, bg: Option<crate::terminal::Color>,
+                style: crate::terminal::Style, text: &str) {
             let $slf = self;
             let _ = $field.write_styled_at(pos, fg, bg, style, text);
         }
@@ -545,8 +545,8 @@ fn new_buffer(buf: &mut Vec<Cell>, new_size: Size) {
 
 #[cfg(test)]
 mod test {
-    use terminal::{Cursor, Size};
-    use util::char_width;
+    use crate::terminal::{Cursor, Size};
+    use crate::util::char_width;
     use super::ScreenBuffer;
 
     macro_rules! assert_lines {

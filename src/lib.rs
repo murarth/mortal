@@ -41,10 +41,10 @@ extern crate unicode_width;
 
 #[cfg(windows)] extern crate winapi;
 
-pub use screen::{Screen, ScreenReadGuard, ScreenWriteGuard};
-pub use sequence::{FindResult, SequenceMap};
-pub use signal::{Signal, SignalSet};
-pub use terminal::{
+pub use crate::screen::{Screen, ScreenReadGuard, ScreenWriteGuard};
+pub use crate::sequence::{FindResult, SequenceMap};
+pub use crate::signal::{Signal, SignalSet};
+pub use crate::terminal::{
     Color, Cursor, CursorMode, Size, Style, Theme,
     Event, Key, MouseEvent, MouseInput, MouseButton, ModifierState,
     PrepareConfig, PrepareState,
@@ -70,15 +70,15 @@ mod sys;
 mod sys;
 
 #[cfg(unix)]
-pub use sys::ext as unix;
+pub use crate::sys::ext as unix;
 
 #[cfg(windows)]
 pub use sys::ext as windows;
 
 #[cfg(test)]
 mod test {
-    use screen::Screen;
-    use terminal::Terminal;
+    use crate::screen::Screen;
+    use crate::terminal::Terminal;
 
     fn assert_has_traits<T: 'static + Send + Sync>() {}
 

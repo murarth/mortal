@@ -2,10 +2,11 @@
 
 use std::io;
 use std::time::Duration;
-use terminal::Event;
 
-use priv_util::Private;
 use winapi::um::wincon::INPUT_RECORD;
+
+use crate::priv_util::Private;
+use crate::terminal::Event;
 
 /// Implements Windows-only extensions for terminal interfaces.
 pub trait TerminalExt: Private {

@@ -2,6 +2,7 @@
 name = "mortal"
 version = "0.1.5"
 authors = ["Murarth <murarth@gmail.com>"]
+edition = "2018"
 
 description = "Cross-platform terminal interface"
 

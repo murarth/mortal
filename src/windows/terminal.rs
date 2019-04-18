@@ -74,13 +74,13 @@ use winapi::um::winnt::{
     FILE_SHARE_READ, FILE_SHARE_WRITE,
 };
 
-use priv_util::{map_lock_result, map_try_lock_result};
-use signal::{Signal, SignalSet};
-use terminal::{
+use crate::priv_util::{map_lock_result, map_try_lock_result};
+use crate::signal::{Signal, SignalSet};
+use crate::terminal::{
     Color, Cursor, CursorMode, Event, Key, PrepareConfig, Size, Style, Theme,
     MouseButton, MouseEvent, MouseInput, ModifierState,
 };
-use util::unctrl_lower;
+use crate::util::unctrl_lower;
 
 pub struct Terminal {
     in_handle: HANDLE,

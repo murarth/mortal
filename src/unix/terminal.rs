@@ -33,14 +33,14 @@ use terminfo::{self, capability as cap, Database};
 use terminfo::capability::Expansion;
 use terminfo::expand::Context;
 
-use priv_util::{map_lock_result, map_try_lock_result};
-use sequence::{FindResult, SequenceMap};
-use signal::{Signal, SignalSet};
-use terminal::{
+use crate::priv_util::{map_lock_result, map_try_lock_result};
+use crate::sequence::{FindResult, SequenceMap};
+use crate::signal::{Signal, SignalSet};
+use crate::terminal::{
     Color, Cursor, CursorMode, Event, Key, PrepareConfig, Size, Style, Theme,
     MouseButton, MouseEvent, MouseInput, ModifierState,
 };
-use util::prefixes;
+use crate::util::prefixes;
 
 const OUT_BUFFER_SIZE: usize = 8192;
 

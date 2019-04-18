@@ -1,8 +1,8 @@
 use std::sync::{LockResult, PoisonError, TryLockError, TryLockResult};
 
-use screen::{Screen, ScreenReadGuard};
-use terminal::{Terminal, TerminalReadGuard};
-use util::char_width;
+use crate::screen::{Screen, ScreenReadGuard};
+use crate::terminal::{Terminal, TerminalReadGuard};
+use crate::util::char_width;
 
 // Private trait used to prevent external crates from implementing extension traits
 pub trait Private {}

@@ -4,8 +4,8 @@ use std::io;
 use std::path::Path;
 use std::time::Duration;
 
-use priv_util::Private;
-use terminal::Event;
+use crate::priv_util::Private;
+use crate::terminal::Event;
 
 /// Implements Unix-only extensions for terminal interfaces.
 pub trait OpenTerminalExt: Sized + Private {
