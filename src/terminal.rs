@@ -53,17 +53,16 @@ bitflags!{
     }
 }
 
-
 /// Represents a terminal output theme.
 ///
 /// A theme consists of a foreground and background color as well as a style.
-#[derive(Clone,Debug,Default)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Theme {
-    /// The foreground color
+    /// Foreground color
     pub fg: Option<Color>,
-    /// The background color
+    /// Background color
     pub bg: Option<Color>,
-    /// The style
+    /// Style
     pub style: Style,
 }
 
@@ -75,11 +74,10 @@ impl Theme {
     /// In order to create a Theme using default values you might want to use
     /// `Theme::default()` instead.
     pub fn new<F,B,S>(fg: F, bg: B, style: S) -> Theme
-        where
-            F: Into<Option<Color>>,
-            B: Into<Option<Color>>,
-            S: Into<Option<Style>> {
-        
+            where
+                F: Into<Option<Color>>,
+                B: Into<Option<Color>>,
+                S: Into<Option<Style>> {
         Theme {
             fg: fg.into(),
             bg: bg.into(),
@@ -89,35 +87,25 @@ impl Theme {
 
     /// Sets the foreground color on the given Theme and returns the new.
     pub fn fg<F>(mut self, fg: F) -> Theme
-        where
-            F: Into<Option<Color>> {
-        
+            where F: Into<Option<Color>> {
         self.fg = fg.into();
-        
         self
     }
 
     /// Sets the background color on the given Theme and returns the new.
     pub fn bg<B>(mut self, bg: B) -> Theme
-        where
-            B: Into<Option<Color>> {
-        
+            where B: Into<Option<Color>> {
         self.bg = bg.into();
-        
         self
     }
 
     /// Sets the style on the given Theme and returns the new.
     pub fn style<S>(mut self, style: S) -> Theme
-        where
-            S: Into<Option<Style>> {
-        
+            where S: Into<Option<Style>> {
         self.style = style.into().unwrap_or_default();
-        
         self
     }
 }
-
 
 /// Represents the cursor position in a terminal device
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
@@ -748,8 +736,14 @@ impl Terminal {
     }
 
     /// Sets the current style to the given set of flags.
-    pub fn set_style(&self, style: Style) -> io::Result<()> {
-        self.0.set_style(style)
+    pub fn set_style<S>(&self, style: S) -> io::Result<()>
+            where S: Into<Option<Style>> {
+        self.0.set_style(style.into().unwrap_or_default())
+    }
+
+    /// Sets all attributes for the terminal.
+    pub fn set_theme(&self, theme: Theme) -> io::Result<()> {
+        self.0.set_theme(theme)
     }
 
     /// Sets the foreground text color.
@@ -843,6 +837,11 @@ impl Terminal {
     pub fn write_fmt(&self, args: fmt::Arguments) -> io::Result<()> {
         let s = args.to_string();
         self.write_str(&s)
+    }
+
+    #[doc(hidden)]
+    pub fn borrow_term_write_guard(&self) -> TerminalWriteGuard {
+        self.lock_write().unwrap()
     }
 }
 
@@ -1006,8 +1005,14 @@ impl<'a> TerminalWriteGuard<'a> {
     }
 
     /// Sets the current style to the given set of flags.
-    pub fn set_style(&mut self, style: Style) -> io::Result<()> {
-        self.0.set_style(style)
+    pub fn set_style<S>(&mut self, style: S) -> io::Result<()>
+            where S: Into<Option<Style>> {
+        self.0.set_style(style.into().unwrap_or_default())
+    }
+
+    /// Sets all attributes for the terminal.
+    pub fn set_theme(&mut self, theme: Theme) -> io::Result<()> {
+        self.0.set_theme(theme)
     }
 
     /// Sets the background text color.
@@ -1088,6 +1093,11 @@ impl<'a> TerminalWriteGuard<'a> {
     pub fn write_fmt(&mut self, args: fmt::Arguments) -> io::Result<()> {
         let s = args.to_string();
         self.write_str(&s)
+    }
+
+    #[doc(hidden)]
+    pub fn borrow_term_write_guard(&mut self) -> &mut Self {
+        self
     }
 }
 

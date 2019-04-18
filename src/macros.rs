@@ -1,319 +1,329 @@
 //! Provides macros easier printing with colors and styles.
-//!
-//! See: https://github.com/murarth/mortal/issues/7
 
+use std::io;
 
-
-
-/// Writes on given terminal using themes.
+/// Writes attributes and formatted text to a `Terminal` or `Screen`.
 ///
-/// # Syntax
+/// # Usage
 ///
-/// The base syntax of this macro is:
+/// `term_write!` accepts a series of attribute elements and formatted text elements.
 ///
-/// ```ignore
-/// term_write!( [lock] <terminal> ; [theming|output] ... )
-/// ```
+/// [`term_writeln!`] is equivalent, but writes a newline character
+/// to the end of the formatted text.
 ///
-/// First there is the optional keyword `lock` followed by the identifier
-/// (aka name) of the terminal variable. This variable must be of type
-/// [`Terminal`] or [`TerminalWriteGuard`]. If the type of that
-/// variable is `Terminal` the keyword `lock` may be specified too.
-/// After the terminal variable follow, separated by a semicolon `;`, either
-/// _theme specifications_ or _output instructions_, or multiple of them.
+/// Attribute elements are enclosed in square brackets
+/// and take one of the following forms:
 ///
-/// The _theme specifications_ are fenced by square bracket `[ ]`. Within these
-///  is either of the following:
-/// - a foreground color: small caps color name such as (`black`, `blue`,
-///   `cyan`, `green`, `magenta`, `red`, `white`, `yellow`)
-/// - a background color: similar to foreground but with a leading hash `#` such
-///   as (`#black`, `#blue`, `#cyan`, `#green`, `#magenta`, `#red`, `#white`,
-///   `#yellow`)
-/// - an additive style specifier: a small caps style name such as (`bold`,
-///   `italic`, `underline`, `reverse`)
-/// - a subtractive style specifier: similar to additive but with a
-///   leading exclamation mark such as (`!bold`, `!italic`, `!underline`,
-///   `!reverse`)
-/// - a reset specifier either of `reset`, `!fg`, `!bg`, `!style`
-/// - foreground variable: `fg=` plus the name of a variable
-/// - background variable: `bg=` plus the name of a variable
-/// - style variable (overriding): `style=` plus the name of a variable
-/// - style variable (additive): `style+=` plus the name of a variable
-/// - style variable (subtractive): `style-=` plus the name of a variable
-/// - theme variable: `=` plus the name of a variable
+/// | Element           | Equivalent                        |
+/// | ----------------- | --------------------------------- |
+/// | `[red]`           | `term.set_fg(Color::Red)`         |
+/// | `[#blue]`         | `term.set_bg(Color::Blue)`        |
+/// | `[bold]`          | `term.add_style(Style::BOLD)`     |
+/// | `[!bold]`         | `term.remove_style(Style::BOLD)`  |
+/// | `[reset]`         | `term.clear_attributes()`         |
+/// | `[!fg]`           | `term.set_fg(None)`               |
+/// | `[!bg]`           | `term.set_bg(None)`               |
+/// | `[!style]`        | `term.set_style(None)`            |
+/// | `[fg=expr]`       | `term.set_fg(expr)`               |
+/// | `[bg=expr]`       | `term.set_bg(expr)`               |
+/// | `[style=expr]`    | `term.set_style(expr)`            |
+/// | `[style+=expr]`   | `term.add_style(expr)`            |
+/// | `[style-=expr]`   | `term.remove_style(expr)`         |
+/// | `[theme=expr]`    | `term.set_theme(expr)`            |
 ///
-/// The _output instructions_ may be either of the following:
-/// - a literal such as a string `"stuff"` or integer `42`
-/// - a Rust `std::fmt` format string with arguments fenced in
-///   parentheses `( )` such as `("some {}", "text")`
-/// - a `Display` shortcut for the format string `"{}"`, which is an expression
-///   enclosed in parentheses with a leading colon `(: )` such as `(: true)`
-/// - a `Debug` shortcut for the format string `"{:?}"`, which is an expression
-///   enclosed in parentheses with a leading question mark `(? )` such as
-///   `(? true)`. 
+/// Formatted text elements are enclosed in parentheses
+/// and use Rust [`std::fmt`] functions to write formatted text to the terminal.
+/// Additionally, a bare string literal may be given and will be written
+/// directly to the terminal.
 ///
-/// [`Terminal`]: ./terminal/struct.Terminal.html
-/// [`TerminalWriteGuard`]: terminal/struct.TerminalWriteGuard.html
-///
-///
-/// # Locking
-///
-/// The terminal write lock will be acquired as required. If the first argument
-/// is of type `TerminalWriteGuard` no locking will be performed since the guard
-/// already holds the lock. If the first argument is of type `Terminal` then
-/// the keyword `lock` may be prefixed. If `lock` is given, then the macro will
-/// acquire the terminal guard before any output and write out all output while
-/// holding it. If the `lock` prefix is not given, each output fragment will lock
-/// the terminal independently, which might lead to actual
-/// fragmented output if there is concurrent thread writing to the terminal.
-///
-/// Notice that if the `TerminalWriteGuard` is held by the current thread,
-/// then this macro must not be called with the `Terminal`. Otherwise a deadlock
-/// will occur.
-///
+/// | Element           | Equivalent                        |
+/// | ----------------- | --------------------------------- |
+/// | `(: expr)`        | `write!(term, "{}", expr)`        |
+/// | `(? expr)`        | `write!(term, "{:?}", expr)`      |
+/// | `("format", ...)` | `write!(term, "format", ...)`     |
+/// | `"literal str"`   | `term.write_str("literal str")`   |
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// #[macro_use] extern crate mortal;
-/// use mortal::Terminal;
-/// use mortal::Theme;
-/// use mortal::Color;
-/// use mortal::Style;
+/// # use std::io;
+/// use mortal::{Color, Style, Theme, Terminal};
 ///
-/// let term = Terminal::new().unwrap();
-/// // Simple output example
-/// term_write!(term; "Hello world");
+/// # fn main() -> io::Result<()> {
+/// let term = Terminal::new()?;
 ///
-/// // Writing format strings
-/// term_write!(term; ("Number #{}", 42));
+/// term_writeln!(term, [red] "red text" [reset])?;
 ///
-/// // Using keywords
-/// term_write!(term; [blue] "A blue " [bold] "world");
+/// let color = Color::Green;
+/// term_writeln!(term, [fg=color] "green text" [reset])?;
 ///
-/// // Using variables
-/// let c = Color::Green;
-/// term_write!(term; "Just " [fg=c] (? c)); // short cut for ("{:?}", c)
+/// let style = Style::BOLD;
+/// term_writeln!(term, [style=style] "bold text" [reset])?;
 ///
-/// // Using themes
-/// let theme = Theme::default().fg(Color::Red).style(Style::BOLD);
-/// term_write!(term; [=theme] "Red and Bold");
+/// let value = 42;
+/// term_writeln!(term, "The answer is: " [bold] (: value) [reset])?;
+///
+/// let theme = Theme::new(color, None, style);
+/// term_writeln!(term, [theme=theme] "Red, bold text" [reset])?;
+/// # Ok(())
+/// # }
 /// ```
 ///
-/// Further examples can be found in the examples folder of Mortal.
-///
+/// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/
+/// [`term_writeln!`]: macro.term_writeln.html
 #[macro_export]
 macro_rules! term_write {
-	// Lock prefix
-	( lock $term:ident; $($rest:tt)* ) => {
-		// Scoped in order to force unlock at the end.
-		// Otherwise, calling this method twice in row could deadlock.
-		{
-			let mut lock = $term.lock_write().unwrap();
-			term_write!(lock; $( $rest )* );
-		}
-	};
-	
-	// Final rule
-	( $term:ident $( ; )* ) => {
-		$term.clear_attributes();
-	};
-	
-	// Foreground Colors
-	( $term:ident; [ black ] $($rest:tt)*) => {
-		$term.set_fg($crate::Color::Black);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ blue ] $($rest:tt)*) => {
-		$term.set_fg($crate::Color::Blue);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ cyan ] $($rest:tt)*) => {
-		$term.set_fg($crate::Color::Cyan);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ green ] $($rest:tt)*) => {
-		$term.set_fg($crate::Color::Green);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ magenta ] $($rest:tt)*) => {
-		$term.set_fg($crate::Color::Magenta);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ red ] $($rest:tt)*) => {
-		$term.set_fg($crate::Color::Red);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ white ] $($rest:tt)*) => {
-		$term.set_fg($crate::Color::White);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ yellow ] $($rest:tt)*) => {
-		$term.set_fg($crate::Color::Yellow);
-		term_write!($term; $($rest)*);
-	};
-	
-	// Background Colors
-	( $term:ident; [ # black ] $($rest:tt)*) => {
-		$term.set_bg($crate::Color::Black);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ # blue ] $($rest:tt)*) => {
-		$term.set_bg($crate::Color::Blue);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ # cyan ] $($rest:tt)*) => {
-		$term.set_bg($crate::Color::Cyan);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ # green ] $($rest:tt)*) => {
-		$term.set_bg($crate::Color::Green);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ # magenta ] $($rest:tt)*) => {
-		$term.set_bg($crate::Color::Magenta);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ # red ] $($rest:tt)*) => {
-		$term.set_bg($crate::Color::Red);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ # white ] $($rest:tt)*) => {
-		$term.set_bg($crate::Color::White);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ # yellow ] $($rest:tt)*) => {
-		$term.set_bg($crate::Color::Yellow);
-		term_write!($term; $($rest)*);
-	};
-	
-	// Adding Style
-	( $term:ident; [ bold ] $($rest:tt)*) => {
-		$term.add_style($crate::Style::BOLD);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ italic ] $($rest:tt)*) => {
-		$term.add_style($crate::Style::ITALIC);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ reverse ] $($rest:tt)*) => {
-		$term.add_style($crate::Style::REVERSE);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ underline ] $($rest:tt)*) => {
-		$term.add_style($crate::Style::UNDERLINE);
-		term_write!($term; $($rest)*);
-	};
-	
-	// Removing Style
-	( $term:ident; [ ! bold ] $($rest:tt)*) => {
-		$term.remove_style($crate::Style::BOLD);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ ! italic ] $($rest:tt)*) => {
-		$term.remove_style($crate::Style::ITALIC);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ ! reverse ] $($rest:tt)*) => {
-		$term.remove_style($crate::Style::REVERSE);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ ! underline ] $($rest:tt)*) => {
-		$term.remove_style($crate::Style::UNDERLINE);
-		term_write!($term; $($rest)*);
-	};
-	
-	// Resets
-	( $term:ident; [ reset ] $($rest:tt)*) => {
-		$term.clear_attributes();
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ ! fg ] $($rest:tt)*) => {
-		$term.set_fg(None);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ ! bg ] $($rest:tt)*) => {
-		$term.set_bg(None);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ ! style ] $($rest:tt)*) => {
-		$term.set_style($crate::Style::default());
-		term_write!($term; $($rest)*);
-	};
-	
-	// Complex formats
-	( $term:ident; [ fg = $e:expr ] $($rest:tt)*) => {
-		$term.set_fg($e);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ bg = $e:expr ] $($rest:tt)*) => {
-		$term.set_fg($e);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ style = $e:expr ] $($rest:tt)*) => {
-		$term.set_style($e);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ style += $e:expr ] $($rest:tt)*) => {
-		$term.add_style($e);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ style -= $e:expr ] $($rest:tt)*) => {
-		$term.remove_style($e);
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; [ = $var:expr ] $($rest:tt)*) => {
-		let x = &$var;
-		let th = x as &$crate::Theme;
-		$term.set_fg(th.fg).unwrap();
-		$term.set_bg(th.bg).unwrap();
-		$term.set_style(th.style).unwrap();
-		term_write!($term; $($rest)*);
-	};
-	
-	// Single expressing printing
-	( $term:ident; (: $e:expr ) $($rest:tt)*) => {
-		write!($term, "{}", $e ).unwrap();
-		term_write!($term; $($rest)*);
-	};
-	( $term:ident; (? $e:expr ) $($rest:tt)*) => {
-		write!($term, "{:?}", $e ).unwrap();
-		term_write!($term; $($rest)*);
-	};
-	
-	// Format printing
-	( $term:ident; ( $( $fmt:tt )+ ) $($rest:tt)*) => {
-		write!($term, $( $fmt )+ ).unwrap();
-		term_write!($term; $($rest)*);
-	};
-	
-	// Literal printing
-	( $term:ident; $s:tt $($rest:tt)*) => {
-		write!($term, "{}", concat!($s)).unwrap();
-		term_write!($term; $($rest)*);
-	};
+    // Entry rule
+    ( $term:expr , $first:tt $($rest:tt)* ) => {
+        match $term.borrow_term_write_guard() {
+            mut term => {
+                let init = $crate::macros::Chain::init();
+                term_write!(@_INTERNAL main: term ; init ; $first $($rest)*)
+            }
+        }
+    };
+
+    // Final rule
+    ( @_INTERNAL main: $term:expr ; $result:expr ; ) => {
+        $result
+    };
+
+    // Color/style rules
+    ( @_INTERNAL main: $term:expr ; $result:expr ; [ $($tt:tt)* ] $($rest:tt)* ) => {
+        term_write!(
+            @_INTERNAL main: $term;
+            term_write!(@_INTERNAL style: $term; $result; $($tt)*);
+            $($rest)*
+        )
+    };
+
+    // Formatting rules
+    ( @_INTERNAL main: $term:expr ; $result:expr ; ( $($tt:tt)* ) $($rest:tt)* ) => {
+        term_write!(
+            @_INTERNAL main: $term;
+            term_write!(@_INTERNAL format: $term; $result; $($tt)*);
+            $($rest)*
+        )
+    };
+    ( @_INTERNAL main: $term:expr ; $result:expr ; $tt:tt $($rest:tt)* ) => {
+        term_write!(
+            @_INTERNAL main: $term;
+            term_write!(@_INTERNAL literal: $term; $result; $tt);
+            $($rest)*
+        )
+    };
+
+    // Set foreground color
+    ( @_INTERNAL style: $term:expr ; $result:expr ; black ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($crate::Color::Black))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; blue ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($crate::Color::Blue))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; cyan ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($crate::Color::Cyan))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; green ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($crate::Color::Green))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; magenta ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($crate::Color::Magenta))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; red ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($crate::Color::Red))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; white ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($crate::Color::White))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; yellow ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($crate::Color::Yellow))
+    };
+
+    // Set background color
+    ( @_INTERNAL style: $term:expr ; $result:expr ; # black ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($crate::Color::Black))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; # blue ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($crate::Color::Blue))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; # cyan ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($crate::Color::Cyan))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; # green ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($crate::Color::Green))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; # magenta ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($crate::Color::Magenta))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; # red ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($crate::Color::Red))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; # white ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($crate::Color::White))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; # yellow ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($crate::Color::Yellow))
+    };
+
+    // Add style
+    ( @_INTERNAL style: $term:expr ; $result:expr ; bold ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.add_style($crate::Style::BOLD))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; italic ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.add_style($crate::Style::ITALIC))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; reverse ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.add_style($crate::Style::REVERSE))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; underline ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.add_style($crate::Style::UNDERLINE))
+    };
+
+    // Remove style
+    ( @_INTERNAL style: $term:expr ; $result:expr ; ! bold ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.remove_style($crate::Style::BOLD))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; ! italic ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.remove_style($crate::Style::ITALIC))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; ! reverse ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.remove_style($crate::Style::REVERSE))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; ! underline ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.remove_style($crate::Style::UNDERLINE))
+    };
+
+    // Clear attributes
+    ( @_INTERNAL style: $term:expr ; $result:expr ; reset ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.clear_attributes())
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; ! fg ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg(None))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; ! bg ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg(None))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; ! style ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_style(None))
+    };
+
+    // Color/style expressions
+    ( @_INTERNAL style: $term:expr ; $result:expr ; fg = $e:expr ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_fg($e))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; bg = $e:expr ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_bg($e))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; style = $e:expr ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_style($e))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; style += $e:expr ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.add_style($e))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; style -= $e:expr ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.remove_style($e))
+    };
+    ( @_INTERNAL style: $term:expr ; $result:expr ; theme = $e:expr ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.set_theme($e))
+    };
+
+    // std::fmt formatting
+    ( @_INTERNAL format: $term:expr ; $result:expr ; : $e:expr ) => {
+        $crate::macros::Chain::chain(
+            $result, || write!($term, "{}", $e))
+    };
+    ( @_INTERNAL format: $term:expr ; $result:expr ; ? $e:expr ) => {
+        $crate::macros::Chain::chain(
+            $result, || write!($term, "{:?}", $e))
+    };
+    ( @_INTERNAL format: $term:expr ; $result:expr ; $($tt:tt)* ) => {
+        $crate::macros::Chain::chain(
+            $result, || write!($term, $($tt)*))
+    };
+
+    // Literal formatting
+    ( @_INTERNAL literal: $term:expr ; $result:expr ; $lit:tt ) => {
+        $crate::macros::Chain::chain(
+            $result, || $term.write_str(concat!($lit)))
+    };
 }
 
-
-/// Same as term_write macro but adds a new line at the end.
+/// Writes attributes and formatted text to a `Terminal` or `Screen`.
+///
+/// Formatted output is followed by a newline.
+///
+/// See [`term_write`] for a description of macro syntax and example usage.
+///
+/// [`term_write`]: macro.term_write.html
 #[macro_export]
 macro_rules! term_writeln {
-	( lock $term:ident; $( $rest:tt )* ) => {
-		// Scoped in order to force unlock at the end.
-		// Otherwise, calling this method twice in row could deadlock.
-		{
-			let mut lock = $term.lock_write().unwrap();
-			term_write!(lock; $( $rest )* );
-			writeln!(lock).unwrap();
-		}
-	};
-	( $term:ident $( ; )* ) => {
-		writeln!($term).unwrap();
-	};
-	( $term:ident; $( $rest:tt )* ) => {
-		term_write!($term; $( $rest )* );
-		writeln!($term).unwrap();
-	};
+    ( $term:expr ) => {
+        term_write!($term, "\n")
+    };
+    ( $term:expr , $($tt:tt)* ) => {
+        term_write!($term, $($tt)* "\n")
+    };
 }
 
+// Facilitates chaining calls from either a `Terminal` or `Screen` lock.
+//
+// Terminal methods return `io::Result<()>` and are chained with
+// `Result::and_then`; Screen methods return `()`, so the next function is
+// always called.
+#[doc(hidden)]
+pub trait Chain: Sized {
+    fn chain<F: FnOnce() -> Self>(self, f: F) -> Self;
 
+    fn init() -> Self;
+}
+
+impl Chain for () {
+    fn chain<F: FnOnce() -> Self>(self, f: F) -> Self {
+        f()
+    }
+
+    fn init() -> Self { }
+}
+
+impl Chain for io::Result<()> {
+    fn chain<F: FnOnce() -> Self>(self, f: F) -> Self {
+        self.and_then(|_| f())
+    }
+
+    fn init() -> Self { Ok(()) }
+}

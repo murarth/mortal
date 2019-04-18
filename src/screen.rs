@@ -8,7 +8,7 @@ use std::time::Duration;
 use priv_util::{map_lock_result, map_try_lock_result};
 use sys;
 use terminal::{
-    Color, Cursor, CursorMode, Event, PrepareConfig, Size, Style,
+    Color, Cursor, CursorMode, Event, PrepareConfig, Size, Style, Theme,
     Terminal,
 };
 
@@ -227,6 +227,12 @@ impl Screen {
         self.0.set_bg(bg.into());
     }
 
+    /// Sets all attributes for the screen.
+    #[inline]
+    pub fn set_theme(&self, theme: Theme) {
+        self.0.set_theme(theme)
+    }
+
     /// Removes color and style attributes.
     #[inline]
     pub fn clear_attributes(&self) {
@@ -347,6 +353,11 @@ impl Screen {
         let s = args.to_string();
         self.write_str(&s)
     }
+
+    #[doc(hidden)]
+    pub fn borrow_term_write_guard(&self) -> ScreenWriteGuard {
+        self.lock_write().unwrap()
+    }
 }
 
 impl<'a> ScreenReadGuard<'a> {
@@ -447,6 +458,12 @@ impl<'a> ScreenWriteGuard<'a> {
     #[inline]
     pub fn set_bg<C: Into<Option<Color>>>(&mut self, bg: C) {
         self.0.set_bg(bg.into())
+    }
+
+    /// Sets all attributes for the screen.
+    #[inline]
+    pub fn set_theme(&mut self, theme: Theme) {
+        self.0.set_theme(theme)
     }
 
     /// Adds bold to the current style setting.
@@ -557,6 +574,11 @@ impl<'a> ScreenWriteGuard<'a> {
     pub fn write_fmt(&mut self, args: fmt::Arguments) {
         let s = args.to_string();
         self.write_str(&s)
+    }
+
+    #[doc(hidden)]
+    pub fn borrow_term_write_guard(&mut self) -> &mut Self {
+        self
     }
 }
 

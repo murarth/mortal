@@ -11,6 +11,10 @@
 //! buffer. Methods exist to set the cursor position and to write text with
 //! color and style attributes.
 //!
+//! The [`term_write!`] and [`term_writeln!`] macros provide a convenient interface
+//! to output attributes and formatted text to either a `Terminal` or `Screen`
+//! instance.
+//!
 //! ## Concurrency
 //!
 //! Each interface uses internal locking mechanisms to allow sharing of the
@@ -21,7 +25,8 @@
 //!
 //! [`Screen`]: screen/struct.Screen.html
 //! [`Terminal`]: terminal/struct.Terminal.html
-//! [`refresh`]: screen/struct.Screen.html#method.refresh
+//! [`term_write!`]: macro.term_write.html
+//! [`term_writeln!`]: macro.term_writeln.html
 
 #![deny(missing_docs)]
 
@@ -47,13 +52,14 @@ pub use terminal::{
 };
 
 #[macro_use] mod buffer;
+#[doc(hidden)]
+#[macro_use] pub mod macros;
 mod priv_util;
 pub mod screen;
 pub mod sequence;
 pub mod signal;
 pub mod terminal;
 pub mod util;
-#[macro_use] pub mod macros;
 
 #[cfg(unix)]
 #[path = "unix/mod.rs"]

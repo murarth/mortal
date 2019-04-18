@@ -37,7 +37,7 @@ use priv_util::{map_lock_result, map_try_lock_result};
 use sequence::{FindResult, SequenceMap};
 use signal::{Signal, SignalSet};
 use terminal::{
-    Color, Cursor, CursorMode, Event, Key, PrepareConfig, Size, Style,
+    Color, Cursor, CursorMode, Event, Key, PrepareConfig, Size, Style, Theme,
     MouseButton, MouseEvent, MouseInput, ModifierState,
 };
 use util::prefixes;
@@ -261,6 +261,10 @@ impl Terminal {
 
     pub fn set_style(&self, style: Style) -> io::Result<()> {
         self.lock_writer().set_style(style)
+    }
+
+    pub fn set_theme(&self, theme: Theme) -> io::Result<()> {
+        self.lock_writer().set_theme(theme)
     }
 
     pub fn lock_read(&self) -> LockResult<TerminalReadGuard> {
@@ -842,6 +846,10 @@ impl<'a> TerminalWriteGuard<'a> {
         }
 
         Ok(())
+    }
+
+    pub fn set_theme(&mut self, theme: Theme) -> io::Result<()> {
+        self.set_attrs(theme.fg, theme.bg, theme.style)
     }
 
     pub fn set_attrs(&mut self, fg: Option<Color>, bg: Option<Color>, style: Style) -> io::Result<()> {

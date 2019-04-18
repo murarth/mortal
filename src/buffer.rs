@@ -4,7 +4,7 @@ use std::ops::Range;
 use smallstr::SmallString;
 
 use priv_util::is_visible;
-use terminal::{Color, Cursor, Size, Style};
+use terminal::{Color, Cursor, Size, Style, Theme};
 use util::{char_width, is_combining_mark};
 
 const TAB_STOP: usize = 8;
@@ -87,6 +87,12 @@ impl ScreenBuffer {
 
     pub fn set_bg(&mut self, bg: Option<Color>) {
         self.bg = bg;
+    }
+
+    pub fn set_theme(&mut self, theme: Theme) {
+        self.set_fg(theme.fg);
+        self.set_bg(theme.bg);
+        self.set_style(theme.style);
     }
 
     pub fn clear_screen(&mut self) {
@@ -329,6 +335,11 @@ macro_rules! forward_screen_buffer_methods {
             $field.set_bg(bg);
         }
 
+        pub fn set_theme(&self, theme: ::terminal::Theme) {
+            let $slf = self;
+            $field.set_theme(theme)
+        }
+
         pub fn write_char(&self, ch: char) {
             let $slf = self;
             let _ = $field.write_char(ch);
@@ -416,6 +427,11 @@ macro_rules! forward_screen_buffer_mut_methods {
         pub fn set_bg(&mut self, bg: Option<::terminal::Color>) {
             let $slf = self;
             $field.set_bg(bg);
+        }
+
+        pub fn set_theme(&mut self, theme: ::terminal::Theme) {
+            let $slf = self;
+            $field.set_theme(theme);
         }
 
         pub fn write_char(&mut self, ch: char) {

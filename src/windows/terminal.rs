@@ -77,7 +77,7 @@ use winapi::um::winnt::{
 use priv_util::{map_lock_result, map_try_lock_result};
 use signal::{Signal, SignalSet};
 use terminal::{
-    Color, Cursor, CursorMode, Event, Key, PrepareConfig, Size, Style,
+    Color, Cursor, CursorMode, Event, Key, PrepareConfig, Size, Style, Theme,
     MouseButton, MouseEvent, MouseInput, ModifierState,
 };
 use util::unctrl_lower;
@@ -271,6 +271,10 @@ impl Terminal {
 
     pub fn set_bg(&self, bg: Option<Color>) -> io::Result<()> {
         self.lock_writer().set_bg(bg)
+    }
+
+    pub fn set_theme(&self, theme: Theme) -> io::Result<()> {
+        self.lock_writer().set_theme(theme)
     }
 
     pub fn write_char(&self, ch: char) -> io::Result<()> {
@@ -795,6 +799,10 @@ impl<'a> TerminalWriteGuard<'a> {
             self.update_attrs()?;
         }
         Ok(())
+    }
+
+    pub fn set_theme(&mut self, theme: Theme) -> io::Result<()> {
+        self.set_attributes(theme.fg, theme.bg, theme.style)
     }
 
     // Clears any previous attributes
