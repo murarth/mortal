@@ -1293,7 +1293,7 @@ fn parse_mouse_data(mut buf: &[u8]) -> Option<(MouseEvent, usize)> {
     input &= !XTERM_MODIFIER_MASK;
 
     let input = match input {
-        0 ... 3 => mouse_button_event(input, is_pressed),
+        0 ..= 3 => mouse_button_event(input, is_pressed),
         64 => MouseInput::WheelUp,
         65 => MouseInput::WheelDown,
         _ => MouseInput::Motion,
@@ -1318,7 +1318,7 @@ fn parse_integer(buf: &mut &[u8]) -> Option<(u32, u8)> {
 
     while let Some(&b) = iter.next() {
         match b {
-            b'0' ... b'9' => {
+            b'0' ..= b'9' => {
                 n = n.checked_mul(10)?
                     .checked_add((b - b'0') as u32)?;
             }
