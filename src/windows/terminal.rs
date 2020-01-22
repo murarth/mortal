@@ -1019,7 +1019,13 @@ unsafe fn console_mode(handle: HANDLE) -> io::Result<DWORD> {
 unsafe fn console_size(handle: HANDLE) -> io::Result<Size> {
     let info = console_info(handle)?;
 
-    Ok(coord_to_size(info.dwSize))
+    let lines = (info.srWindow.Right - info.srWindow.Left + 1) as usize;
+    let columns = (info.srWindow.Bottom - info.srWindow.Top + 1) as usize;
+
+    Ok(Size {
+        lines,
+        columns,
+    })
 }
 
 unsafe fn set_console_mode(handle: HANDLE, mode: DWORD) -> io::Result<()> {
@@ -1099,13 +1105,6 @@ fn coord_to_cursor(pos: COORD) -> Cursor {
     Cursor{
         line: pos.Y as usize,
         column: pos.X as usize,
-    }
-}
-
-fn coord_to_size(size: COORD) -> Size {
-    Size{
-        lines: size.Y as usize,
-        columns: size.X as usize,
     }
 }
 
