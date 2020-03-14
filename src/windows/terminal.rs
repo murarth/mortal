@@ -879,7 +879,7 @@ impl<'a> TerminalWriteGuard<'a> {
 
         result_bool(unsafe { FillConsoleOutputAttribute(
             self.writer.out_handle,
-            0,
+            self.term.default_attrs,
             n,
             start,
             &mut n_chars) })?;
