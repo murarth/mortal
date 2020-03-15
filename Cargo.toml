@@ -15,9 +15,6 @@ keywords = ["cli", "console", "screen", "term", "terminal"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
 
-[badges]
-travis-ci = { repository = "murarth/mortal" }
-
 [dependencies]
 bitflags = "1.0"
 smallstr = "0.1"
