@@ -1,3 +1,4 @@
+use std::convert::TryFrom;
 use std::fs::File;
 use std::io;
 use std::mem::{replace, zeroed};
@@ -1371,7 +1372,7 @@ extern "C" fn handle_signal(signum: c_int) {
 }
 
 fn conv_signal(sig: c_int) -> Option<Signal> {
-    match NixSignal::from_c_int(sig).ok() {
+    match NixSignal::try_from(sig).ok() {
         Some(NixSignal::SIGCONT)  => Some(Signal::Continue),
         Some(NixSignal::SIGINT)   => Some(Signal::Interrupt),
         Some(NixSignal::SIGQUIT)  => Some(Signal::Quit),
