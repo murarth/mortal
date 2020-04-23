@@ -28,7 +28,7 @@ use winapi::um::consoleapi::{
     SetConsoleMode,
 };
 use winapi::um::handleapi::{
-    CloseHandle,
+    CloseHandle, INVALID_HANDLE_VALUE,
 };
 use winapi::um::processenv::{
     GetStdHandle,
@@ -1019,7 +1019,13 @@ unsafe fn console_mode(handle: HANDLE) -> io::Result<DWORD> {
 unsafe fn console_size(handle: HANDLE) -> io::Result<Size> {
     let info = console_info(handle)?;
 
-    Ok(coord_to_size(info.dwSize))
+    let lines = (info.srWindow.Right - info.srWindow.Left + 1) as usize;
+    let columns = (info.srWindow.Bottom - info.srWindow.Top + 1) as usize;
+
+    Ok(Size {
+        lines,
+        columns,
+    })
 }
 
 unsafe fn set_console_mode(handle: HANDLE, mode: DWORD) -> io::Result<()> {
@@ -1102,13 +1108,6 @@ fn coord_to_cursor(pos: COORD) -> Cursor {
     }
 }
 
-fn coord_to_size(size: COORD) -> Size {
-    Size{
-        lines: size.Y as usize,
-        columns: size.X as usize,
-    }
-}
-
 fn cursor_to_coord(pos: Cursor) -> COORD {
     COORD{
         Y: to_short(pos.line),
@@ -1118,8 +1117,8 @@ fn cursor_to_coord(pos: Cursor) -> COORD {
 
 fn size_to_coord(size: Size) -> COORD {
     COORD{
-        Y: to_short(size.lines),
-        X: to_short(size.columns),
+        Y: to_short(size.lines + 1),
+        X: to_short(size.columns + 1),
     }
 }
 
@@ -1257,7 +1256,7 @@ fn result_bool(b: BOOL) -> io::Result<()> {
 }
 
 fn result_handle(ptr: HANDLE) -> io::Result<HANDLE> {
-    if ptr.is_null() {
+    if ptr == INVALID_HANDLE_VALUE {
         Err(io::Error::last_os_error())
     } else {
         Ok(ptr)
