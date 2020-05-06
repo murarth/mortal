@@ -28,6 +28,7 @@
 //! [`term_write!`]: macro.term_write.html
 //! [`term_writeln!`]: macro.term_writeln.html
 
+#![allow(unused_imports)]
 #![deny(missing_docs)]
 
 #[macro_use] extern crate bitflags;
@@ -67,6 +68,10 @@ mod sys;
 
 #[cfg(windows)]
 #[path = "windows/mod.rs"]
+mod sys;
+
+#[cfg(target_arch = "wasm32")]
+#[path = "wasm32/mod.rs"]
 mod sys;
 
 #[cfg(unix)]
