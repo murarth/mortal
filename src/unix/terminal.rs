@@ -477,11 +477,11 @@ impl<'a> TerminalReadGuard<'a> {
             match select(in_fd + 1,
                     Some(&mut r_fds), None, Some(&mut e_fds), timeout.as_mut()) {
                 Ok(n) => break n,
-                Err(ref e) if e.as_errno() == Some(Errno::EINTR) => {
+                Err(Errno::EINTR) =>
                     if get_signal().is_some() {
                         return Ok(true);
                     }
-                }
+                
                 Err(e) => return Err(nix_to_io(e))
             }
         };
@@ -574,7 +574,7 @@ impl<'a> TerminalReadGuard<'a> {
         loop {
             match read(self.term.in_fd, buf) {
                 Ok(n) => break Ok(Some(Event::Raw(n))),
-                Err(ref e) if e.as_errno() == Some(Errno::EINTR) => {
+                Err(Errno::EINTR) => {
                     if let Some(sig) = take_signal() {
                         return Ok(Some(Event::Signal(sig)));
                     }
@@ -1029,7 +1029,7 @@ impl<'a> TerminalWriteGuard<'a> {
             match write(self.term.out_fd, buf) {
                 Ok(0) => break Err(io::Error::from(io::ErrorKind::WriteZero)),
                 Ok(n) => offset += n,
-                Err(e) if e.as_errno() == Some(Errno::EINTR) => continue,
+                Err(Errno::EINTR) => continue,
                 Err(e) => break Err(nix_to_io(e))
             }
         };
@@ -1174,11 +1174,7 @@ fn get_winsize(fd: c_int) -> io::Result<Size> {
 }
 
 fn nix_to_io(e: nix::Error) -> io::Error {
-    if let Some(errno) = e.as_errno() {
-        io::Error::from_raw_os_error(errno as i32)
-    } else {
-        io::Error::new(io::ErrorKind::Other, e.to_string())
-    }
+    io::Error::from_raw_os_error(e as i32)
 }
 
 fn ti_to_io(e: terminfo::Error) -> io::Error {
