@@ -23,7 +23,7 @@ unicode-width = "0.1"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
-nix = "0.17"
+nix = "0.23.0"
 terminfo = "0.7"
 
 [target.'cfg(windows)'.dependencies]
