@@ -90,7 +90,7 @@ fn run_task(name: &str, line: usize, color: Color, screen: &Screen,
             _ => ()
         }
 
-        sleep(Duration::from_millis(rng.gen_range(300, 500)));
+        sleep(Duration::from_millis(rng.gen_range(300..500)));
 
         // Hold the lock while we perform a few different write operations.
         // This ensures that no other thread's output will interrupt ours.

@@ -55,7 +55,7 @@ fn run_task(name: &str, color: Color, term: &Terminal)
     let mut rng = thread_rng();
 
     for _ in 0..5 {
-        sleep(Duration::from_millis(rng.gen_range(100, 300)));
+        sleep(Duration::from_millis(rng.gen_range(100..300)));
 
         // Hold the lock while we perform a few different write operations.
         // This ensures that no other thread's output will interrupt ours.

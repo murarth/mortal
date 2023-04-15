@@ -40,7 +40,7 @@ bitflags!{
     /// Represents a set of style attributes applied to text.
     ///
     /// Some styles may not be supported on all systems.
-    #[derive(Default)]
+    #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Hash)]
     pub struct Style: u8 {
         /// Bold
         const BOLD      = 1 << 0;
@@ -346,6 +346,7 @@ pub enum MouseButton {
 
 bitflags!{
     /// Represents a set of modifier keys
+    #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
     pub struct ModifierState: u8 {
         /// Alt key
         const ALT   = 1 << 0;
